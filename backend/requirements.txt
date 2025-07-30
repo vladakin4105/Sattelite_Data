@@ -1,0 +1,29 @@
+# web framework
+fastapi
+
+# ASGI server
+uvicorn[standard]
+
+# ORM + SQLModel
+sqlmodel
+sqlalchemy
+
+# PostgreSQL driver
+psycopg2-binary
+
+# Geospatial / raster processing
+shapely
+rasterio
+
+# Numerics & image processing
+numpy
+opencv-python
+
+# Plotting (dacă ai nevoie)
+matplotlib
+
+# HTTP requests
+requests
+
+# utilitare
+python-dotenv
