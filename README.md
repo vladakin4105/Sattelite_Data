@@ -1,5 +1,7 @@
-Structure:
-  ├── .env
+# Project Name
+
+## Structure:
+```
   ├── docker-compose.yml
   ├── backend/
   │   ├── Dockerfile
@@ -18,3 +20,15 @@ Structure:
               ├── Home.js
               ├── About.js
               └── Stats.js
+```
+## Description
+
+---
+
+## Installation
+
+---
+
+## Usage
+
+---
