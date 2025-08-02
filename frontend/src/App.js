@@ -14,6 +14,7 @@ export default function App() {
           <Link to="/" style={{ color: '#fff' }}>Home</Link>
           <Link to="/about" style={{ color: '#fff' }}>About</Link>
           <Link to="/stats" style={{ color: '#fff' }}>Stats</Link>
+          
         </nav>
       </header>
       <Suspense fallback={<div>Loading...</div>}>

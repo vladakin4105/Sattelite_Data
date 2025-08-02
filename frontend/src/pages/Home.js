@@ -25,6 +25,7 @@ export default function Home() {
     <div style={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
       <div style={{ flex: 1, background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)', padding: '1rem', color: '#fff' }}>
         <h3>Menu</h3>
+        
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
           Settings / Controls
         </div>
