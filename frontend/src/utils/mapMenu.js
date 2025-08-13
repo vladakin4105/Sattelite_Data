@@ -11,15 +11,13 @@ const clearRectangle = (map) => {
   }
 };
 
-const mapMenu = (mapRef, map) => [
+const mapMenu = (mapRef, map, onBoxDrawn, onCoordsUpdate) => [
   {
     id: "move",
     label: "Navigation Mode",
     icon: <MoveIcon width={20} height={20} />,
     action: () => {
       if (!map) return;
-
-      // Șterge dreptunghiul existent
       clearRectangle(map);
 
       map.dragging.enable();
@@ -40,10 +38,7 @@ const mapMenu = (mapRef, map) => [
     icon: <HexagonIcon width={20} height={20} />,
     action: () => {
       if (!map) return;
-
-      // Șterge dreptunghiul existent
       clearRectangle(map);
-
       map.dragging.disable();
 
       if (map._drawCreatedHandler) {
@@ -51,22 +46,35 @@ const mapMenu = (mapRef, map) => [
       }
 
       map._drawCreatedHandler = function (e) {
-        // Ștergem vechiul dreptunghi dacă există
         clearRectangle(map);
-
         const layer = e.layer;
         map._drawnLayer = layer;
         map.addLayer(layer);
 
         const coords = layer.getLatLngs()[0];
-        console.log("Coordonate dreptunghi selectat:", coords);
+        const x1 = coords[0].lng;
+        const y1 = coords[0].lat;
+        const x2 = coords[2].lng;
+        const y2 = coords[2].lat;
 
-        alert("Area selected!");
+        // trimite coordonatele spre Home.js
+        if (typeof onCoordsUpdate === "function") {
+          onCoordsUpdate({
+            x1: x1.toFixed(6),
+            y1: y1.toFixed(6),
+            x2: x2.toFixed(6),
+            y2: y2.toFixed(6)
+          });
+        }
+
+        // apelează și logica existentă pentru salvare
+        if (typeof onBoxDrawn === "function") {
+          onBoxDrawn(x1, y1, x2, y2);
+        }
       };
 
       map.on(L.Draw.Event.CREATED, map._drawCreatedHandler);
 
-      // Pornește direct modul de desenare
       const drawer = new L.Draw.Rectangle(map, {
         shapeOptions: { color: "#196bf8ff" }
       });
