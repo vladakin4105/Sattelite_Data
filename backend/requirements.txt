@@ -27,3 +27,4 @@ requests
 
 # utilitare
 python-dotenv
+passlib[bcrypt]
