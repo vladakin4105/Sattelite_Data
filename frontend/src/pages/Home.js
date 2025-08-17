@@ -1,5 +1,5 @@
 // Home.js
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -21,6 +21,23 @@ const defaultIcon = L.icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
+// Component to handle map reference and initialization
+const MapInitializer = ({ mapRef, onMapReady }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (map && mapRef) {
+      mapRef.current = map;
+      console.log('Map reference set:', map);
+      if (onMapReady) {
+        onMapReady(map);
+      }
+    }
+  }, [map, mapRef, onMapReady]);
+
+  return null;
+};
 
 const MapMenuControl = ({ mapRef, onCoordsUpdate }) => {
   const map = useMap();
@@ -78,6 +95,254 @@ const MapMenuControl = ({ mapRef, onCoordsUpdate }) => {
   return null;
 };
 
+const removeNdviOverlay = (map) => {
+  if(!map) return;
+  if(map._ndviOverlay) {
+    try {
+      // Revoke URL if it exists
+      if (map._ndviOverlay._url && map._ndviOverlay._url.startsWith('blob:')) {
+        URL.revokeObjectURL(map._ndviOverlay._url);
+      }
+      map.removeLayer(map._ndviOverlay);
+    } catch (e) {
+      console.warn('Error removing NDVI overlay:', e);
+    }
+    map._ndviOverlay = null;
+  }
+};
+
+const fetchAndShowNdviOverlay = async (mapRef, username, x1, y1, x2, y2) => {
+  if (!mapRef.current) {
+    console.error('Map ref not available');
+    return;
+  }
+
+  console.log('Fetching NDVI for user:', username, 'coordinates:', { x1, y1, x2, y2 });
+
+  try {
+    // Use fetch instead of axios for better blob handling
+    const response = await fetch(`${api.defaults.baseURL}/users/${username}/coords/ndvi`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'image/png',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const blob = await response.blob();
+    console.log('Received blob:', blob.type, blob.size, 'bytes');
+
+    if (blob.size === 0) {
+      throw new Error('Received empty response');
+    }
+
+    const url = URL.createObjectURL(blob);
+    console.log('Created blob URL:', url);
+
+    // Convert coordinates to numbers and validate
+    const lon1 = parseFloat(x1);
+    const lat1 = parseFloat(y1);
+    const lon2 = parseFloat(x2);
+    const lat2 = parseFloat(y2);
+
+    if (isNaN(lon1) || isNaN(lat1) || isNaN(lon2) || isNaN(lat2)) {
+      throw new Error('Invalid coordinates');
+    }
+
+    // Compute Leaflet bounds: [[south, west], [north, east]]
+    const south = Math.min(lat1, lat2);
+    const north = Math.max(lat1, lat2);
+    const west = Math.min(lon1, lon2);
+    const east = Math.max(lon1, lon2);
+    const bounds = [[south, west], [north, east]];
+
+    console.log('Creating overlay with bounds:', bounds);
+
+    // Remove previous overlay
+    removeNdviOverlay(mapRef.current);
+
+    // Create and add the overlay
+    const overlay = L.imageOverlay(url, bounds, { 
+      opacity: 1.0,
+      interactive: false,
+      crossOrigin: false,
+      pane: 'overlayPane'
+    });
+
+    overlay.addTo(mapRef.current);
+    
+    // Store references for cleanup
+    overlay._url = url;
+    mapRef.current._ndviOverlay = overlay;
+
+    // Fit map to overlay bounds with padding
+    mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+
+    // Handle overlay events
+    overlay.on('load', () => {
+      console.log('NDVI overlay loaded successfully');
+      // Force a redraw/refresh
+      mapRef.current.invalidateSize();
+    });
+
+    overlay.on('error', (e) => {
+      console.error('NDVI overlay failed to load:', e);
+      alert('Failed to load NDVI overlay. Please try again.');
+    });
+
+    overlay.on('add', () => {
+      console.log('NDVI overlay added to map');
+      // Try to bring overlay to front
+      overlay.bringToFront();
+    });
+
+    // Clean up URL when overlay is removed
+    overlay.on('remove', () => {
+      try {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) {
+        console.warn('Error revoking URL on remove:', e);
+      }
+    });
+
+    console.log('NDVI overlay added to map');
+
+  } catch (err) {
+    console.error("Failed to fetch NDVI overlay:", err);
+    alert(`NDVI generation failed: ${err.message}`);
+  }
+};
+
+const fetchAndShowNdviForBBox = async (mapRef, x1, y1, x2, y2, opts = {}) => {
+  // Wait a bit if map is not ready yet
+  let attempts = 0;
+  while (!mapRef.current && attempts < 10) {
+    console.log(`Waiting for map... attempt ${attempts + 1}`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    attempts++;
+  }
+
+  if (!mapRef.current) {
+    console.error('Map ref not available after waiting');
+    return;
+  }
+
+  console.log('Fetching NDVI for bbox:', { x1, y1, x2, y2 }, 'options:', opts);
+
+  try {
+    const payload = { 
+      bbox: [parseFloat(x1), parseFloat(y1), parseFloat(x2), parseFloat(y2)]
+    };
+    if (opts.resolution) payload.resolution = opts.resolution;
+    if (opts.start) payload.start = opts.start;
+    if (opts.end) payload.end = opts.end;
+
+    const response = await fetch(`${api.defaults.baseURL}/ndvi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'image/png',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const blob = await response.blob();
+    console.log('Received blob:', blob.type, blob.size, 'bytes');
+
+    if (blob.size === 0) {
+      throw new Error('Received empty response');
+    }
+
+    const url = URL.createObjectURL(blob);
+    console.log('Created blob URL:', url);
+
+    // Convert coordinates to numbers and validate
+    const lon1 = parseFloat(x1);
+    const lat1 = parseFloat(y1);
+    const lon2 = parseFloat(x2);
+    const lat2 = parseFloat(y2);
+
+    if (isNaN(lon1) || isNaN(lat1) || isNaN(lon2) || isNaN(lat2)) {
+      throw new Error('Invalid coordinates');
+    }
+
+    // Compute Leaflet bounds: [[south, west], [north, east]]
+    const south = Math.min(lat1, lat2);
+    const north = Math.max(lat1, lat2);
+    const west = Math.min(lon1, lon2);
+    const east = Math.max(lon1, lon2);
+    const bounds = [[south, west], [north, east]];
+
+    console.log('Creating overlay with bounds:', bounds);
+
+    // Remove previous overlay
+    removeNdviOverlay(mapRef.current);
+
+    // Create and add the overlay
+    const overlay = L.imageOverlay(url, bounds, { 
+      opacity: 1.0,
+      interactive: false,
+      crossOrigin: false,
+      pane: 'overlayPane'
+    });
+
+    overlay.addTo(mapRef.current);
+    
+    // Store references for cleanup
+    overlay._url = url;
+    mapRef.current._ndviOverlay = overlay;
+
+    // Fit map to overlay bounds with padding
+    mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+
+    // Handle overlay events
+    overlay.on('load', () => {
+      console.log('NDVI overlay loaded successfully');
+      // Force a redraw/refresh
+      mapRef.current.invalidateSize();
+    });
+
+    overlay.on('error', (e) => {
+      console.error('NDVI overlay failed to load:', e);
+      alert('Failed to load NDVI overlay. Please try again.');
+    });
+
+    overlay.on('add', () => {
+      console.log('NDVI overlay added to map');
+      // Try to bring overlay to front
+      overlay.bringToFront();
+    });
+
+    // Clean up URL when overlay is removed
+    overlay.on('remove', () => {
+      try {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) {
+        console.warn('Error revoking URL on remove:', e);
+      }
+    });
+
+    console.log('NDVI overlay added to map');
+
+  } catch (err) {
+    console.error("Failed to fetch NDVI overlay for bbox:", err);
+    alert(`NDVI generation failed: ${err.message}`);
+  }
+};
+
 export default function Home() {
   const { user, setUsername } = useContext(UserContext);
   const [position, setPosition] = useState([44.4268, 26.1025]);
@@ -86,6 +351,8 @@ export default function Home() {
   const [guestPendingCoords, setGuestPendingCoords] = useState([]);
   const [guestActions, setGuestActions] = useState([]);
   const [coordInputs, setCoordInputs] = useState({ x1: '25.0', y1: '45.0', x2: '25.1', y2: '45.1' });
+  const [isLoadingNdvi, setIsLoadingNdvi] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
 
   const savePendingCoord = (coord) => {
@@ -127,23 +394,59 @@ export default function Home() {
       return;
     }
 
+    // Check if map is ready
+    if (!mapReady || !mapRef.current) {
+      alert("Map is not ready yet. Please wait a moment and try again.");
+      return;
+    }
+
+    setIsLoadingNdvi(true);
+    setMessage('Loading NDVI data...');
+
     if (!user || user.username === "guest") {
       savePendingCoord(coord);
-      alert("Saved temporarily for guest.");
+      try {
+        await fetchAndShowNdviForBBox(mapRef, coord.x1, coord.y1, coord.x2, coord.y2, { resolution: 60 });
+        setMessage('NDVI overlay loaded for guest');
+      } catch (err) {
+        setMessage('');
+        console.error('Error loading NDVI for guest:', err);
+      }
+      setIsLoadingNdvi(false);
       return;
     }
 
     try {
       await createUserIfNotExists(user.username);
       await api.post(`/users/${user.username}/coords`, coord);
-      alert("Saved for user " + user.username);
-    } catch (err) { alert("Failed to save to server."); }
+      await fetchAndShowNdviOverlay(mapRef, user.username, coord.x1, coord.y1, coord.x2, coord.y2);
+      setMessage(`NDVI overlay loaded for user ${user.username}`);
+    } catch (err) { 
+      console.error('Error saving/loading for user:', err);
+      alert("Failed to save to server."); 
+      setMessage('');
+    }
+    setIsLoadingNdvi(false);
   };
+
+  const handleMapReady = useCallback((map) => {
+    console.log('Map is ready:', map);
+    setMapReady(true);
+  }, []);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => setPosition([pos.coords.latitude, pos.coords.longitude]), () => {});
     }
+  }, []);
+
+  // Cleanup overlay on unmount
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        removeNdviOverlay(mapRef.current);
+      }
+    };
   }, []);
 
   const handlePress = () => {
@@ -192,9 +495,21 @@ export default function Home() {
     catch { return guestActions.length; }
   };
 
+  const handleRemoveOverlay = () => {
+    if (mapRef.current) {
+      removeNdviOverlay(mapRef.current);
+      setMessage('NDVI overlay removed');
+    }
+  };
+
   // --- Funcție pentru update coordonate din draw ---
   const handleDrawCoordsUpdate = ({ x1, y1, x2, y2 }) => {
-    setCoordInputs({ x1, y1, x2, y2 });
+    setCoordInputs({ 
+      x1: x1.toString(), 
+      y1: y1.toString(), 
+      x2: x2.toString(), 
+      y2: y2.toString() 
+    });
     saveBox(x1, y1, x2, y2);
   };
 
@@ -204,6 +519,7 @@ export default function Home() {
         <h3>Menu</h3>
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
           <p>Current user: <strong>{user?.username ?? 'guest'}</strong></p>
+          <p>Map status: <strong>{mapReady ? 'Ready' : 'Loading...'}</strong></p>
           <form onSubmit={handleSetName} style={{ marginBottom: '0.5rem' }}>
             <input value={nameInput} onChange={handleChangeName} placeholder="Set display name" style={{ marginRight: '0.5rem', padding: '0.25rem' }}/>
             <button type="submit" style={{ padding: '0.25rem 0.5rem' }}>Set</button>
@@ -220,7 +536,73 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <button onClick={handleSaveCoords} style={{ width: '100%', padding: '0.5rem', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save Coordinates</button>
+            <button 
+              onClick={handleSaveCoords} 
+              disabled={isLoadingNdvi || !mapReady}
+              style={{ 
+                width: '100%', 
+                padding: '0.5rem', 
+                backgroundColor: (isLoadingNdvi || !mapReady) ? '#555' : '#007bff', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: (isLoadingNdvi || !mapReady) ? 'not-allowed' : 'pointer', 
+                fontWeight: 'bold',
+                marginBottom: '0.5rem'
+              }}
+            >
+              {!mapReady ? 'Map Loading...' : (isLoadingNdvi ? 'Loading NDVI...' : 'Save Coordinates')}
+            </button>
+            
+            <button 
+              onClick={handleRemoveOverlay}
+              disabled={!mapReady}
+              style={{ 
+                width: '100%', 
+                padding: '0.5rem', 
+                backgroundColor: !mapReady ? '#555' : '#dc3545', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: !mapReady ? 'not-allowed' : 'pointer', 
+                fontWeight: 'bold',
+                marginBottom: '0.5rem'
+              }}
+            >
+              Remove NDVI Overlay
+            </button>
+
+            <button 
+              onClick={() => {
+                if (mapRef.current && mapRef.current._ndviOverlay) {
+                  console.log('Current overlay:', mapRef.current._ndviOverlay);
+                  console.log('Overlay URL:', mapRef.current._ndviOverlay._url);
+                  console.log('Map layers:', Object.keys(mapRef.current._layers));
+                  console.log('Overlay bounds:', mapRef.current._ndviOverlay.getBounds());
+                  console.log('Map bounds:', mapRef.current.getBounds());
+                  // Try to refresh overlay
+                  mapRef.current._ndviOverlay.bringToFront();
+                  mapRef.current.invalidateSize();
+                } else {
+                  console.log('No NDVI overlay found');
+                  console.log('Map available:', !!mapRef.current);
+                  console.log('Map ready state:', mapReady);
+                }
+              }}
+              disabled={!mapReady}
+              style={{ 
+                width: '100%', 
+                padding: '0.5rem', 
+                backgroundColor: !mapReady ? '#555' : '#28a745', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: !mapReady ? 'not-allowed' : 'pointer', 
+                fontWeight: 'bold'
+              }}
+            >
+              Debug Overlay
+            </button>
           </div>
 
           <div style={{ marginTop: '1rem', fontSize: '0.9em' }}>
@@ -234,9 +616,14 @@ export default function Home() {
       </div>
 
       <div style={{ flex: 2, position: 'relative' }}>
-        <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} whenCreated={(mapInstance) => { mapRef.current = mapInstance; }}>
+        <MapContainer 
+          center={position} 
+          zoom={13} 
+          style={{ height: '100%', width: '100%' }}
+        >
           <TileLayer attribution='Tiles © Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"/>
           <Marker position={position} icon={defaultIcon}><Popup>Your location</Popup></Marker>
+          <MapInitializer mapRef={mapRef} onMapReady={handleMapReady} />
           <MapMenuControl mapRef={mapRef} onCoordsUpdate={handleDrawCoordsUpdate} />
         </MapContainer>
       </div>
