@@ -10,6 +10,8 @@ import { api } from '../utils/api';
 import mapMenu from '../utils/mapMenu';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+import { useNavigate } from 'react-router-dom';
+
 
 const PENDING_KEY = "pending_coords";
 
@@ -354,7 +356,15 @@ export default function Home() {
   const [isLoadingNdvi, setIsLoadingNdvi] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
+  
+  const { logout } = useContext(UserContext); // folosește logout, nu setUser
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout(); // resetează user și storage
+    navigate('/auth', { replace: true }); // du-te la pagina de autentificare
+  };
+  
   const savePendingCoord = (coord) => {
     try {
       const arr = JSON.parse(sessionStorage.getItem(PENDING_KEY) || "[]");
@@ -518,7 +528,26 @@ export default function Home() {
       <div style={{ flex: 1, background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)', padding: '1rem', color: '#fff' }}>
         <h3>Menu</h3>
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
-          <p>Current user: <strong>{user?.username ?? 'guest'}</strong></p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+  <span>Current user: <strong>{user?.username ?? 'guest'}</strong></span>
+  
+  <button
+    onClick={handleLogout}
+    style={{
+      marginLeft: 'auto',
+      padding: '0.25rem 0.5rem',
+      fontSize: '0.8rem',
+      borderRadius: '4px',
+      backgroundColor: '#000000ff',
+      color: 'white',
+      border: 'none',
+      cursor: 'pointer'
+    }}
+  >
+    Log Out
+  </button>
+</div>
+
           <p>Map status: <strong>{mapReady ? 'Ready' : 'Loading...'}</strong></p>
           <form onSubmit={handleSetName} style={{ marginBottom: '0.5rem' }}>
             <input value={nameInput} onChange={handleChangeName} placeholder="Set display name" style={{ marginRight: '0.5rem', padding: '0.25rem' }}/>
