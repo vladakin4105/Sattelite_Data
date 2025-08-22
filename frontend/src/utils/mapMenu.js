@@ -1,6 +1,6 @@
 // src/utils/mapMenu.js
-import L from "leaflet";
-import "leaflet-draw";
+import L from 'leaflet';
+import 'leaflet-draw';
 import { ReactComponent as MoveIcon } from "../assets/arrows-move.svg";
 import { ReactComponent as HexagonIcon } from "../assets/hexagon.svg";
 

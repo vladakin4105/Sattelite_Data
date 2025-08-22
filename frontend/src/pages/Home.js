@@ -10,11 +10,15 @@ import { api } from '../utils/api';
 import mapMenu from '../utils/mapMenu';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+
+import NdviButton from "../components/NdviButton";
 import { useNavigate } from 'react-router-dom';
 import History from '../utils/History';
 
+
 const PENDING_KEY = "pending_coords";
 
+ 
 const defaultIcon = L.icon({
   iconUrl: markerIconPng,
   shadowUrl: markerShadowPng,
@@ -623,6 +627,9 @@ mapRef.current._historyRect = rect;
     <div style={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
       <div style={{ flex: 1, background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)', padding: '1rem', color: '#fff' }}>
         <h3>Menu</h3>
+         
+        <NdviButton mapRef={mapRef} />
+
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
   <span>Current user: <strong>{user?.username ?? 'guest'}</strong></span>
