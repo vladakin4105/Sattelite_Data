@@ -12,11 +12,14 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
 import NdviButton from "../components/NdviButton";
+import ModisButton from "../components/ModisButton";
 import { useNavigate } from 'react-router-dom';
 import History from '../utils/History';
 
+ 
 
 const PENDING_KEY = "pending_coords";
+
 
  
 const defaultIcon = L.icon({
@@ -360,6 +363,7 @@ export default function Home() {
   const [isLoadingNdvi, setIsLoadingNdvi] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
+  const [ndviActive, setNdviActive] = useState(false);
   
   const { logout } = useContext(UserContext); // folosește logout, nu setUser
   const navigate = useNavigate();
@@ -401,7 +405,7 @@ export default function Home() {
     }
   };
 
-  const saveBox = async (x1, y1, x2, y2) => {
+  /*const saveBox = async (x1, y1, x2, y2) => {
     const coord = { x1: parseFloat(x1), y1: parseFloat(y1), x2: parseFloat(x2), y2: parseFloat(y2) };
     if (Object.values(coord).some(isNaN)) {
       alert("Please enter valid numeric coordinates.");
@@ -441,7 +445,57 @@ export default function Home() {
       setMessage('');
     }
     setIsLoadingNdvi(false);
+  };*/
+
+  const saveBox = async (x1, y1, x2, y2, generateNdvi = false) => {
+  const coord = { 
+    x1: parseFloat(x1), 
+    y1: parseFloat(y1), 
+    x2: parseFloat(x2), 
+    y2: parseFloat(y2) 
   };
+
+  if (Object.values(coord).some(isNaN)) {
+    alert("Please enter valid numeric coordinates.");
+    return;
+  }
+
+  if (!mapReady || !mapRef.current) {
+    alert("Map is not ready yet. Please wait a moment and try again.");
+    return;
+  }
+
+  try {
+    if (!user || user.username === "guest") {
+      savePendingCoord(coord);
+    } else {
+      await createUserIfNotExists(user.username);
+      await api.post(`/users/${user.username}/coords`, coord);
+    }
+  } catch (err) {
+    console.error('Error saving coordinates:', err);
+  }
+
+  if (generateNdvi) {
+    setIsLoadingNdvi(true);
+    setMessage('Loading NDVI data...');
+    try {
+      if (!user || user.username === "guest") {
+        await fetchAndShowNdviForBBox(mapRef, coord.x1, coord.y1, coord.x2, coord.y2, { resolution: 60 });
+      } else {
+        await fetchAndShowNdviOverlay(mapRef, user.username, coord.x1, coord.y1, coord.x2, coord.y2);
+      }
+      setMessage('NDVI overlay loaded');
+      setNdviActive(true);
+    } catch (err) {
+      console.error('Error generating NDVI:', err);
+      setMessage('');
+      alert('Failed to generate NDVI.');
+    }
+    setIsLoadingNdvi(false);
+  }
+};
+
 
   const handleMapReady = useCallback((map) => {
     console.log('Map is ready:', map);
@@ -621,6 +675,7 @@ mapRef.current._historyRect = rect;
       y2: y2.toString() 
     });
     saveBox(x1, y1, x2, y2);
+
   };
 
   return (
@@ -628,7 +683,13 @@ mapRef.current._historyRect = rect;
       <div style={{ flex: 1, background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)', padding: '1rem', color: '#fff' }}>
         <h3>Menu</h3>
          
-        <NdviButton mapRef={mapRef} />
+         <NdviButton 
+         mapRef={mapRef} 
+         coordInputs={coordInputs} 
+         saveBox={saveBox} 
+         />
+         
+        <ModisButton onClick={() => {}} />  {/* momentan nu face nimic */}
 
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -687,23 +748,31 @@ mapRef.current._historyRect = rect;
               {!mapReady ? 'Map Loading...' : (isLoadingNdvi ? 'Loading NDVI...' : 'Save Coordinates')}
             </button>
             
-            <button 
-              onClick={handleRemoveOverlay}
-              disabled={!mapReady}
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                backgroundColor: !mapReady ? '#555' : '#dc3545', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: !mapReady ? 'not-allowed' : 'pointer', 
-                fontWeight: 'bold',
-                marginBottom: '0.5rem'
-              }}
-            >
-              Remove NDVI Overlay
-            </button>
+        
+
+            {ndviActive && (
+  <button 
+    onClick={() => {
+      handleRemoveOverlay();
+      setNdviActive(false); // dezactivează overlay-ul
+    }}
+    disabled={!mapReady}
+    style={{ 
+      width: '100%', 
+      padding: '0.5rem', 
+      backgroundColor: !mapReady ? '#555' : '#dc3545', 
+      color: 'white', 
+      border: 'none', 
+      borderRadius: '4px', 
+      cursor: !mapReady ? 'not-allowed' : 'pointer', 
+      fontWeight: 'bold',
+      marginBottom: '0.5rem'
+    }}
+  >
+    Remove NDVI Overlay
+  </button>
+)}
+
 
             <button 
   onClick={showRectOnMap}
