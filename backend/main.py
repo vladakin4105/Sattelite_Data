@@ -11,10 +11,10 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 from passlib.context import CryptContext
-
+from datetime import datetime
 # local module (must exist)
 from sentinel_process import generate_ndvi_png_bytes
-
+from fastapi import status
 # Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("geo-app")
@@ -50,6 +50,7 @@ class Coordinate(SQLModel, table=True):
     y1: float
     x2: float
     y2: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # --- Pydantic (request/response) models ---
@@ -73,6 +74,13 @@ class CoordCreate(BaseModel):
     y1: float
     x2: float
     y2: float
+class CoordRead(BaseModel):
+    id: int
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    created_at: datetime
 
 
 # --- Utilities ---
@@ -180,7 +188,7 @@ def add_coord_for_user(username: str, coord: CoordCreate, session: Session = Dep
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.get("/users/{username}/coords", response_model=List[CoordCreate])
+@app.get("/users/{username}/coords", response_model=List[CoordRead])
 def list_coords_for_user(username: str, session: Session = Depends(get_session)):
     try:
         user = session.exec(select(User).where(User.username == username)).first()
@@ -188,10 +196,18 @@ def list_coords_for_user(username: str, session: Session = Depends(get_session))
             raise HTTPException(status_code=404, detail="User not found")
 
         coords = session.exec(select(Coordinate).where(Coordinate.user_id == user.id)).all()
-        result = [CoordCreate(x1=c.x1, y1=c.y1, x2=c.x2, y2=c.y2) for c in coords]
-        logger.info(f"Retrieved {len(result)} coordinates for user {username}")
+        result = [
+            CoordRead(
+                id=c.id,
+                x1=c.x1,
+                y1=c.y1,
+                x2=c.x2,
+                y2=c.y2,
+                created_at=c.created_at
+            )
+            for c in coords
+        ]
         return result
-
     except HTTPException:
         raise
     except Exception as e:
@@ -249,6 +265,35 @@ def signin(payload: UserSignIn, session: Session = Depends(get_session)):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     return UserRead(id=user.id, username=user.username)
+
+@app.delete("/users/{username}/coords/{coord_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_coord(username: str, coord_id: int, session: Session = Depends(get_session)):
+    """
+    Șterge o coordonată specifică a unui user după id.
+    """
+    try:
+        # verifică dacă user-ul există
+        user = session.exec(select(User).where(User.username == username)).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # verifică dacă coordonata există și aparține user-ului
+        coord = session.exec(
+            select(Coordinate).where(Coordinate.id == coord_id, Coordinate.user_id == user.id)
+        ).first()
+        if not coord:
+            raise HTTPException(status_code=404, detail="Coordinate not found")
+
+        # șterge coordonata
+        session.delete(coord)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error deleting coordinate")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- NDVI endpoints ---
