@@ -6,6 +6,7 @@
   ├── backend/
   │   ├── Dockerfile
   │   ├── requirements.txt
+  │   ├── sentinel_process.py
   │   └── main.py                         
   └── frontend/
       ├── Dockerfile
