@@ -10,7 +10,11 @@ import { api } from '../utils/api';
 import mapMenu from '../utils/mapMenu';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+
 import NdviButton from "../components/NdviButton";
+import { useNavigate } from 'react-router-dom';
+import History from '../utils/History';
+
 
 const PENDING_KEY = "pending_coords";
 
@@ -356,7 +360,15 @@ export default function Home() {
   const [isLoadingNdvi, setIsLoadingNdvi] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
+  
+  const { logout } = useContext(UserContext); // folosește logout, nu setUser
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout(); // resetează user și storage
+    navigate('/auth', { replace: true }); // du-te la pagina de autentificare
+  };
+  
   const savePendingCoord = (coord) => {
     try {
       const arr = JSON.parse(sessionStorage.getItem(PENDING_KEY) || "[]");
@@ -468,9 +480,93 @@ export default function Home() {
 
   const handleChangeName = (e) => setNameInput(e.target.value);
   const handleCoordChange = (field, value) => setCoordInputs(prev => ({ ...prev, [field]: value }));
-  const handleSaveCoords = async () => {
-    await saveBox(coordInputs.x1, coordInputs.y1, coordInputs.x2, coordInputs.y2);
+  const handleSaveCoords = async (e) => {
+  e.preventDefault();
+
+  if (!mapReady) {
+    alert("Map is not ready yet.");
+    return;
+  }
+
+  if (!user || user.username === "guest") {
+    alert("Coordinates cannot be saved. You must have an account.");
+    return;
+  }
+
+  try {
+    await saveBox(
+      parseFloat(coordInputs.x1),
+      parseFloat(coordInputs.y1),
+      parseFloat(coordInputs.x2),
+      parseFloat(coordInputs.y2)
+    );
+
+    alert(`Coordinates saved successfully for ${user.username}`);
+  } catch (err) {
+    console.error("Error saving coordinates:", err);
+    alert("An error occurred while saving coordinates. Please try again.");
+  }
+};
+
+const deleteCoord = async (coordId) => {
+    if (!user) return;
+    try {
+      const res = await fetch(
+        `http://localhost:8000/users/${user.username}/coords/${coordId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to delete coord");
+      alert(` Coordinate deleted for user: ${user.username}`);
+    } catch (err) {
+      console.error("Error deleting coord:", err);
+      throw err;
+    }
   };
+
+
+const showRectOnMap = () => {
+  if (!mapRef.current) return;
+
+  // Dacă există deja un dreptunghi, îl ștergem
+  if (rectLayerRef.current) {
+    mapRef.current.removeLayer(rectLayerRef.current);
+  }
+
+  const { x1, y1, x2, y2 } = coordInputs;
+  const lon1 = parseFloat(x1);
+  const lat1 = parseFloat(y1);
+  const lon2 = parseFloat(x2);
+  const lat2 = parseFloat(y2);
+
+  if ([lon1, lat1, lon2, lat2].some(isNaN)) {
+    alert("Invalid coordinates. Cannot draw rectangle.");
+    return;
+  }
+
+  const bounds = [
+    [Math.min(lat1, lat2), Math.min(lon1, lon2)],
+    [Math.max(lat1, lat2), Math.max(lon1, lon2)]
+  ];
+
+  const rect = L.rectangle(bounds, {
+  color: "#3388ff",      // aceeași culoare ca Leaflet Draw
+  weight: 2,
+  fill: true,
+  fillOpacity: 0.2
+}).addTo(mapRef.current);
+
+
+  // Opțional: facem zoom pe dreptunghi
+  mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+
+  if (mapRef.current._historyRect) {
+  mapRef.current.removeLayer(mapRef.current._historyRect);
+}
+mapRef.current._historyRect = rect;
+
+};
+
+ const rectLayerRef = useRef(null);
 
   const handleSetName = async (e) => {
     e.preventDefault();
@@ -503,6 +599,18 @@ export default function Home() {
       setMessage('NDVI overlay removed');
     }
   };
+  const handleHistorySelect = (item) => {
+  setCoordInputs({
+    x1: item.x1.toString(),
+    y1: item.y1.toString(),
+    x2: item.x2.toString(),
+    y2: item.y2.toString()
+  });
+   if (mapRef.current) {
+    mapRef.current.invalidateSize({ animate: true });
+  }
+};
+
 
   // --- Funcție pentru update coordonate din draw ---
   const handleDrawCoordsUpdate = ({ x1, y1, x2, y2 }) => {
@@ -523,7 +631,27 @@ export default function Home() {
         <NdviButton mapRef={mapRef} />
 
         <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
-          <p>Current user: <strong>{user?.username ?? 'guest'}</strong></p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+  <span>Current user: <strong>{user?.username ?? 'guest'}</strong></span>
+  
+  <button
+    onClick={handleLogout}
+    style={{
+      marginLeft: 'auto',
+      padding: '0.25rem 0.5rem',
+      fontSize: '0.8rem',
+      borderRadius: '4px',
+      backgroundColor: '#000000ff',
+      color: 'white',
+      border: 'none',
+      cursor: 'pointer'
+    }}
+  >
+    Log Out
+  </button>
+
+</div>
+
           <p>Map status: <strong>{mapReady ? 'Ready' : 'Loading...'}</strong></p>
           <form onSubmit={handleSetName} style={{ marginBottom: '0.5rem' }}>
             <input value={nameInput} onChange={handleChangeName} placeholder="Set display name" style={{ marginRight: '0.5rem', padding: '0.25rem' }}/>
@@ -578,36 +706,34 @@ export default function Home() {
             </button>
 
             <button 
-              onClick={() => {
-                if (mapRef.current && mapRef.current._ndviOverlay) {
-                  console.log('Current overlay:', mapRef.current._ndviOverlay);
-                  console.log('Overlay URL:', mapRef.current._ndviOverlay._url);
-                  console.log('Map layers:', Object.keys(mapRef.current._layers));
-                  console.log('Overlay bounds:', mapRef.current._ndviOverlay.getBounds());
-                  console.log('Map bounds:', mapRef.current.getBounds());
-                  // Try to refresh overlay
-                  mapRef.current._ndviOverlay.bringToFront();
-                  mapRef.current.invalidateSize();
-                } else {
-                  console.log('No NDVI overlay found');
-                  console.log('Map available:', !!mapRef.current);
-                  console.log('Map ready state:', mapReady);
-                }
-              }}
-              disabled={!mapReady}
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                backgroundColor: !mapReady ? '#555' : '#28a745', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: !mapReady ? 'not-allowed' : 'pointer', 
-                fontWeight: 'bold'
-              }}
-            >
-              Debug Overlay
-            </button>
+  onClick={showRectOnMap}
+  disabled={!mapReady}
+  style={{ 
+    width: '100%', 
+    padding: '0.5rem', 
+    backgroundColor: !mapReady ? '#555' : '#28a745', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '4px', 
+    cursor: !mapReady ? 'not-allowed' : 'pointer', 
+    fontWeight: 'bold'
+  }}
+>
+  Show on Map
+</button>
+
+            
+<History fetchHistory={async () => {
+  try {
+    const response = await fetch(`http://localhost:8000/users/${user.username}/coords`);
+    if (!response.ok) throw new Error("Failed to fetch history");
+    return await response.json();
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}} onSelect={handleHistorySelect} deleteCoord={deleteCoord} />
+
           </div>
 
           <div style={{ marginTop: '1rem', fontSize: '0.9em' }}>

@@ -10,13 +10,44 @@ const Auth = lazy(() => import('./pages/Auth'));
 
 function Header() {
   return (
-    <header style={{ background: '#333', padding: '1rem', color: '#fff' }}>
-        <nav style={{ display: 'flex', gap: '1rem' }}>
-          <Link to="/" style={{ color: '#fff' }}>Home</Link>
-          <Link to="/about" style={{ color: '#fff' }}>About</Link>
-          <Link to="/stats" style={{ color: '#fff' }}>Stats</Link>
-        </nav>
-      </header>
+    <header 
+      style={{ 
+        background: '#333', 
+        padding: '1rem', 
+        color: '#fff' 
+      }}
+    >
+      <nav 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-around', // distribuție egală
+          alignItems: 'center',
+          gap: '1rem'
+        }}
+      >
+        {['Home', 'About', 'Stats'].map(page => (
+          <Link 
+            key={page}
+            to={page === 'Home' ? '/' : `/${page.toLowerCase()}`}
+            style={{ 
+              color: '#fff', 
+              textDecoration: 'none',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              fontSize: '1.2rem',
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              transition: 'all 0.2s',
+              flex: 1
+            }}
+            onMouseEnter={e => e.target.style.backgroundColor = '#555'}
+            onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}
+          >
+            {page}
+          </Link>
+        ))}
+      </nav>
+    </header>
   )
 }
 
