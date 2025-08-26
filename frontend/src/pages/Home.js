@@ -405,6 +405,7 @@ export default function Home() {
     }
   };
 
+  //codul lui vlad pentru ndvi, daca il decomentezi face instant ndvi la selectarea parcelei
   /*const saveBox = async (x1, y1, x2, y2) => {
     const coord = { x1: parseFloat(x1), y1: parseFloat(y1), x2: parseFloat(x2), y2: parseFloat(y2) };
     if (Object.values(coord).some(isNaN)) {
