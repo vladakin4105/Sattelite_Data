@@ -448,7 +448,15 @@ export default function Home() {
     setIsLoadingNdvi(false);
   };*/
 
-  const saveBox = async (x1, y1, x2, y2, generateNdvi = false) => {
+const handleMapResize = () => {
+  if (mapRef.current) {
+    setTimeout(() => {
+      mapRef.current.invalidateSize();
+    }, 300); // dă timp DOM-ului să refacă layout-ul
+  }
+};
+  
+const saveBox = async (x1, y1, x2, y2, generateNdvi = false) => {
   const coord = { 
     x1: parseFloat(x1), 
     y1: parseFloat(y1), 
@@ -498,7 +506,7 @@ export default function Home() {
 };
 
 
-  const handleMapReady = useCallback((map) => {
+const handleMapReady = useCallback((map) => {
     console.log('Map is ready:', map);
     setMapReady(true);
   }, []);
@@ -576,7 +584,7 @@ const deleteCoord = async (coordId) => {
       console.error("Error deleting coord:", err);
       throw err;
     }
-  };
+};
 
 
 const showRectOnMap = () => {
@@ -621,7 +629,7 @@ mapRef.current._historyRect = rect;
 
 };
 
- const rectLayerRef = useRef(null);
+const rectLayerRef = useRef(null);
 
   const handleSetName = async (e) => {
     e.preventDefault();
@@ -661,9 +669,10 @@ mapRef.current._historyRect = rect;
     x2: item.x2.toString(),
     y2: item.y2.toString()
   });
-   if (mapRef.current) {
+  /* if (mapRef.current) {
     mapRef.current.invalidateSize({ animate: true });
-  }
+  }*/
+  handleMapResize(); // în loc de invalidateSize direct
 };
 
 
@@ -679,155 +688,306 @@ mapRef.current._historyRect = rect;
 
   };
 
-  return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
-      <div style={{ flex: 1, background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)', padding: '1rem', color: '#fff' }}>
-        <h3>Menu</h3>
-         
-         <NdviButton 
-         mapRef={mapRef} 
-         coordInputs={coordInputs} 
-         saveBox={saveBox} 
-         />
-         
-        <ModisButton onClick={() => {}} />  {/* momentan nu face nimic */}
+   return (
+  <div style={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
+    
+    {/* Coloana stângă (meniul + history) */}
+    <div
+      style={{
+        width: '350px', // lățime fixă pentru meniu
+        background: 'linear-gradient(145deg, #4f4f4f, #3a3a3a)',
+        padding: '1rem',
+        color: '#fff',
+        overflowY: 'auto' // scroll când e prea mult conținut
+      }}
+    >
+      <h3>Menu</h3>
 
-        <div style={{ background: '#555', padding: '1rem', borderRadius: '8px', boxShadow: '2px 2px 5px rgba(0,0,0,0.5)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-  <span>Current user: <strong>{user?.username ?? 'guest'}</strong></span>
-  
-  <button
-    onClick={handleLogout}
-    style={{
-      marginLeft: 'auto',
-      padding: '0.25rem 0.5rem',
-      fontSize: '0.8rem',
-      borderRadius: '4px',
-      backgroundColor: '#000000ff',
-      color: 'white',
-      border: 'none',
-      cursor: 'pointer'
-    }}
-  >
-    Log Out
-  </button>
+      <NdviButton 
+        mapRef={mapRef} 
+        coordInputs={coordInputs} 
+        saveBox={saveBox} 
+      />
+      
+      <ModisButton onClick={() => {}} /> {/* momentan nu face nimic */}
 
-</div>
+      <div
+        style={{
+          background: '#555',
+          padding: '1rem',
+          borderRadius: '8px',
+          boxShadow: '2px 2px 5px rgba(0,0,0,0.5)'
+        }}
+      >
+        {/* Info utilizator */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginTop: '0.5rem'
+          }}
+        >
+          <span>
+            Current user: <strong>{user?.username ?? 'guest'}</strong>
+          </span>
 
-          <p>Map status: <strong>{mapReady ? 'Ready' : 'Loading...'}</strong></p>
-          <form onSubmit={handleSetName} style={{ marginBottom: '0.5rem' }}>
-            <input value={nameInput} onChange={handleChangeName} placeholder="Set display name" style={{ marginRight: '0.5rem', padding: '0.25rem' }}/>
-            <button type="submit" style={{ padding: '0.25rem 0.5rem' }}>Set</button>
-          </form>
-          <button onClick={handlePress} style={{ display: 'block', marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#666', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}>Press me</button>
-          
-          <div style={{ marginTop: '1rem', padding: '1rem', background: '#666', borderRadius: '6px' }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9em' }}>Enter Coordinates:</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              {['x1','y1','x2','y2'].map((f, i) => (
-                <div key={f}>
-                  <label style={{ display: 'block', fontSize: '0.8em', marginBottom: '2px' }}>{f.toUpperCase()}:</label>
-                  <input type="number" step="0.000001" value={coordInputs[f]} onChange={(e) => handleCoordChange(f, e.target.value)} style={{ width: '100%', padding: '0.25rem', borderRadius: '3px', border: 'none' }}/>
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={handleSaveCoords} 
-              disabled={isLoadingNdvi || !mapReady}
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                backgroundColor: (isLoadingNdvi || !mapReady) ? '#555' : '#007bff', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: (isLoadingNdvi || !mapReady) ? 'not-allowed' : 'pointer', 
+          <button
+            onClick={handleLogout}
+            style={{
+              marginLeft: 'auto',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              borderRadius: '4px',
+              backgroundColor: '#000000ff',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Log Out
+          </button>
+        </div>
+
+        <p>
+          Map status: <strong>{mapReady ? 'Ready' : 'Loading...'}</strong>
+        </p>
+
+        {/* Setare nume */}
+        <form onSubmit={handleSetName} style={{ marginBottom: '0.5rem' }}>
+          <input
+            value={nameInput}
+            onChange={handleChangeName}
+            placeholder="Set display name"
+            style={{ marginRight: '0.5rem', padding: '0.25rem' }}
+          />
+          <button type="submit" style={{ padding: '0.25rem 0.5rem' }}>
+            Set
+          </button>
+        </form>
+
+        <button
+          onClick={handlePress}
+          style={{
+            display: 'block',
+            marginTop: '0.5rem',
+            padding: '0.5rem',
+            backgroundColor: '#666',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            width: '100%'
+          }}
+        >
+          Press me
+        </button>
+
+        {/* Coordonate */}
+        <div
+          style={{
+            marginTop: '1rem',
+            padding: '1rem',
+            background: '#666',
+            borderRadius: '6px'
+          }}
+        >
+          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9em' }}>
+            Enter Coordinates:
+          </h4>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '0.5rem',
+              marginBottom: '0.5rem'
+            }}
+          >
+            {['x1', 'y1', 'x2', 'y2'].map((f) => (
+              <div key={f}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.8em',
+                    marginBottom: '2px'
+                  }}
+                >
+                  {f.toUpperCase()}:
+                </label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={coordInputs[f]}
+                  onChange={(e) => handleCoordChange(f, e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.25rem',
+                    borderRadius: '3px',
+                    border: 'none'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleSaveCoords}
+            disabled={isLoadingNdvi || !mapReady}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              backgroundColor:
+                isLoadingNdvi || !mapReady ? '#555' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor:
+                isLoadingNdvi || !mapReady ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold',
+              marginBottom: '0.5rem'
+            }}
+          >
+            {!mapReady
+              ? 'Map Loading...'
+              : isLoadingNdvi
+              ? 'Loading NDVI...'
+              : 'Save Coordinates'}
+          </button>
+
+          {ndviActive && (
+            <button
+              onClick={() => {
+                handleRemoveOverlay();
+                setNdviActive(false); // dezactivează overlay-ul
+              }}
+              disabled={!mapReady}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                backgroundColor: !mapReady ? '#555' : '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !mapReady ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
                 marginBottom: '0.5rem'
               }}
             >
-              {!mapReady ? 'Map Loading...' : (isLoadingNdvi ? 'Loading NDVI...' : 'Save Coordinates')}
+              Remove NDVI Overlay
             </button>
-            
-        
+          )}
 
-            {ndviActive && (
-  <button 
-    onClick={() => {
-      handleRemoveOverlay();
-      setNdviActive(false); // dezactivează overlay-ul
-    }}
-    disabled={!mapReady}
-    style={{ 
-      width: '100%', 
-      padding: '0.5rem', 
-      backgroundColor: !mapReady ? '#555' : '#dc3545', 
-      color: 'white', 
-      border: 'none', 
-      borderRadius: '4px', 
-      cursor: !mapReady ? 'not-allowed' : 'pointer', 
-      fontWeight: 'bold',
-      marginBottom: '0.5rem'
-    }}
-  >
-    Remove NDVI Overlay
-  </button>
-)}
+          <button
+            onClick={showRectOnMap}
+            disabled={!mapReady}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              backgroundColor: !mapReady ? '#555' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: !mapReady ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Show on Map
+          </button>
 
-
-            <button 
-  onClick={showRectOnMap}
-  disabled={!mapReady}
-  style={{ 
-    width: '100%', 
-    padding: '0.5rem', 
-    backgroundColor: !mapReady ? '#555' : '#28a745', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '4px', 
-    cursor: !mapReady ? 'not-allowed' : 'pointer', 
-    fontWeight: 'bold'
-  }}
->
-  Show on Map
-</button>
-
-            
-<History fetchHistory={async () => {
-  try {
-    const response = await fetch(`http://localhost:8000/users/${user.username}/coords`);
-    if (!response.ok) throw new Error("Failed to fetch history");
-    return await response.json();
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}} onSelect={handleHistorySelect} deleteCoord={deleteCoord} />
-
-          </div>
-
-          <div style={{ marginTop: '1rem', fontSize: '0.9em' }}>
-            <div style={{ marginBottom: '0.5rem' }}><strong>Storage type:</strong> {(!user || user.username === "guest") ? "Temporary" : "Persistent"}</div>
-            {getPendingCoordsCount() > 0 && <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(255,165,0,0.2)', borderRadius: 4 }}><strong>Pending coordinates:</strong> {getPendingCoordsCount()}</div>}
-            {getActionsCount() > 0 && <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: 'rgba(0,255,0,0.2)', borderRadius: 4 }}><strong>Actions:</strong> {getActionsCount()}</div>}
-          </div>
-
-          {message && <div style={{ marginTop: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>{message}</div>}
+          {/* History */}
+          <History
+            fetchHistory={async () => {
+              try {
+                const response = await fetch(
+                  `http://localhost:8000/users/${user.username}/coords`
+                );
+                if (!response.ok) throw new Error('Failed to fetch history');
+                return await response.json();
+              } catch (err) {
+                console.error(err);
+                return [];
+              }
+            }}
+            onSelect={handleHistorySelect}
+            deleteCoord={deleteCoord}
+          />
         </div>
-      </div>
 
-      <div style={{ flex: 2, position: 'relative' }}>
-        <MapContainer 
-          center={position} 
-          zoom={13} 
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer attribution='Tiles © Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"/>
-          <Marker position={position} icon={defaultIcon}><Popup>Your location</Popup></Marker>
-          <MapInitializer mapRef={mapRef} onMapReady={handleMapReady} />
-          <MapMenuControl mapRef={mapRef} onCoordsUpdate={handleDrawCoordsUpdate} />
-        </MapContainer>
+        {/* Info suplimentară */}
+        <div style={{ marginTop: '1rem', fontSize: '0.9em' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
+            <strong>Storage type:</strong>{' '}
+            {!user || user.username === 'guest'
+              ? 'Temporary'
+              : 'Persistent'}
+          </div>
+
+          {getPendingCoordsCount() > 0 && (
+            <div
+              style={{
+                marginBottom: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(255,165,0,0.2)',
+                borderRadius: 4
+              }}
+            >
+              <strong>Pending coordinates:</strong>{' '}
+              {getPendingCoordsCount()}
+            </div>
+          )}
+
+          {getActionsCount() > 0 && (
+            <div
+              style={{
+                marginBottom: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(0,255,0,0.2)',
+                borderRadius: 4
+              }}
+            >
+              <strong>Actions:</strong> {getActionsCount()}
+            </div>
+          )}
+        </div>
+
+        {message && (
+          <div
+            style={{
+              marginTop: '1rem',
+              padding: '0.5rem',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: 6
+            }}
+          >
+            {message}
+          </div>
+        )}
       </div>
     </div>
-  );
+
+    {/* Coloana dreaptă (harta) */}
+    <div style={{ flex: 1, position: 'relative' }}>
+      <MapContainer
+        center={position}
+        zoom={13}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution="Tiles © Esri"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        />
+        <Marker position={position} icon={defaultIcon}>
+          <Popup>Your location</Popup>
+        </Marker>
+        <MapInitializer mapRef={mapRef} onMapReady={handleMapReady} />
+        <MapMenuControl
+          mapRef={mapRef}
+          onCoordsUpdate={handleDrawCoordsUpdate}
+        />
+      </MapContainer>
+    </div>
+  </div>
+);
+
 }

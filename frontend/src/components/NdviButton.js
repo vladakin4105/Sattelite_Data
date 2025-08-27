@@ -41,7 +41,7 @@ export default function NdviButton({ mapRef, coordInputs, saveBox }) {
         width: "100%",
         padding: "0.5rem",
         marginTop: "0.5rem",
-        backgroundColor: "#28a745",
+        backgroundColor: "#2c69c5ff",
         color: "white",
         border: "none",
         borderRadius: "4px",
