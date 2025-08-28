@@ -686,7 +686,7 @@ const rectLayerRef = useRef(null);
       x2: x2.toString(), 
       y2: y2.toString() 
     });
-    saveBox(x1, y1, x2, y2);
+    //saveBox(x1, y1, x2, y2);
 
   };
 
