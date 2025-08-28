@@ -4,12 +4,40 @@ import 'leaflet-draw';
 import { ReactComponent as MoveIcon } from "../assets/arrows-move.svg";
 import { ReactComponent as HexagonIcon } from "../assets/hexagon.svg";
 
-const clearRectangle = (map) => {
+/*const clearRectangle = (map) => {
   if (map && map._drawnLayer) {
     map.removeLayer(map._drawnLayer);
     map._drawnLayer = null;
   }
+    // 🔴 Șterge și overlay-ul NDVI dacă există
+  if (map._ndviOverlay) {
+    map.removeLayer(map._ndviOverlay);
+    map._ndviOverlay = null;
+  }
+};*/
+
+const clearRectangle = (map) => {
+  if (!map) return;
+
+  // Șterge layer-ul din draw
+  if (map._drawnLayer) {
+    map.removeLayer(map._drawnLayer);
+    map._drawnLayer = null;
+  }
+
+  // Șterge overlay-ul NDVI
+  if (map._ndviOverlay) {
+    map.removeLayer(map._ndviOverlay);
+    map._ndviOverlay = null;
+  }
+
+  // Șterge dreptunghiul de la Show on Map
+  if (map._historyRect) {
+    map.removeLayer(map._historyRect);
+    map._historyRect = null;
+  }
 };
+
 
 const mapMenu = (mapRef, map, onBoxDrawn, onCoordsUpdate) => [
   {

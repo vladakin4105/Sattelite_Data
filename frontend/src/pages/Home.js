@@ -587,6 +587,7 @@ const deleteCoord = async (coordId) => {
 };
 
 
+
 const showRectOnMap = () => {
   if (!mapRef.current) return;
 
@@ -594,6 +595,7 @@ const showRectOnMap = () => {
   if (rectLayerRef.current) {
     mapRef.current.removeLayer(rectLayerRef.current);
   }
+  
 
   const { x1, y1, x2, y2 } = coordInputs;
   const lon1 = parseFloat(x1);
