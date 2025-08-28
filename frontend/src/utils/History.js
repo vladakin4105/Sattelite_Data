@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+ import React, { useState, useContext } from "react";
 import { UserContext } from "../context/UserContext";
 
 function History({ fetchHistory, onSelect, deleteCoord }) {
@@ -13,7 +13,6 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
         alert("You cannot access history without an account.");
         return;
       }
-
       try {
         const data = await fetchHistory();
         setHistory(data);
@@ -27,16 +26,13 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
 
   const handleRowDoubleClick = (item, index) => {
     setSelectedIndex(index);
-    if (onSelect) {
-      onSelect(item);
-    }
+    if (onSelect) onSelect(item);
   };
 
   const handleDelete = async (coordId) => {
     if (!window.confirm("Are you sure you want to delete this coordinate?")) return;
-
     try {
-      await deleteCoord(coordId);  // funcția trimite DELETE la backend
+      await deleteCoord(coordId);
       setHistory(history.filter((c) => c.id !== coordId));
     } catch (err) {
       console.error("Failed to delete coordinate:", err);
@@ -44,8 +40,19 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
     }
   };
 
+  const formatDateShortYear = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear()).slice(-2); // ultimele 2 cifre
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
   return (
-    <div>
+    <div style={{ width: "100%" }}>
       <button
         onClick={handleToggle}
         style={{
@@ -69,24 +76,31 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
             marginTop: "10px",
             maxHeight: "250px",
             overflowY: "auto",
+            overflowX: "hidden",
             border: "1px solid #cececeff",
             borderRadius: "8px",
-            padding: "10px",
             background: "#cececeff",
           }}
         >
           {history.length === 0 ? (
-            <p>No saved coordinates yet.</p>
+            <p style={{ padding: "10px" }}>No saved coordinates yet.</p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "0.85rem",
+                tableLayout: "fixed",
+              }}
+            >
               <thead>
-                <tr style={{ backgroundColor: "#454745ff" }}>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}>X1</th>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}>Y1</th>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}>X2</th>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}>Y2</th>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}>Date</th>
-                  <th style={{ border: "1px solid #000000ff", padding: "8px" }}> </th>
+                <tr style={{ backgroundColor: "#454745ff", color: "white" }}>
+                  <th style={{ border: "1px solid #000", padding: "1px" }}>X1</th>
+                  <th style={{ border: "1px solid #000", padding: "1px" }}>Y1</th>
+                  <th style={{ border: "1px solid #000", padding: "1px" }}>X2</th>
+                  <th style={{ border: "1px solid #000", padding: "1px" }}>Y2</th>
+                  <th style={{ border: "1px solid #000", padding: "1px", minWidth: "200px" }}>Date</th>
+                  <th style={{ border: "1px solid #000", padding: "1px", minWidth: "60px" }}>Delete</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,27 +114,39 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
                       color: selectedIndex === index ? "white" : "black",
                     }}
                   >
-                    <td style={{ border: "1px solid #000000ff", padding: "8px" }}>{item.x1}</td>
-                    <td style={{ border: "1px solid #000000ff", padding: "8px" }}>{item.y1}</td>
-                    <td style={{ border: "1px solid #000000ff", padding: "8px" }}>{item.x2}</td>
-                    <td style={{ border: "1px solid #000000ff", padding: "8px" }}>{item.y2}</td>
-                    <td style={{ border: "1px solid #000000ff", padding: "8px" }}>
-                      {item.created_at ? new Date(item.created_at).toLocaleString() : "-"}
+                    <td style={{ border: "1px solid #000", padding: "1px", textAlign: "center" }}>
+                      {Number(item.x1).toFixed(2)}
                     </td>
-                    <td style={{ border: "1px solid #000000ff", padding: "8px", textAlign: "center" }}>
+                    <td style={{ border: "1px solid #000", padding: "1px", textAlign: "center" }}>
+                      {Number(item.y1).toFixed(2)}
+                    </td>
+                    <td style={{ border: "1px solid #000", padding: "1px", textAlign: "center" }}>
+                      {Number(item.x2).toFixed(2)}
+                    </td>
+                    <td style={{ border: "1px solid #000", padding: "1px", textAlign: "center" }}>
+                      {Number(item.y2).toFixed(2)}
+                    </td>
+                    <td style={{ borderTop: "1px solid #000", borderLeft: "1px solid #000",borderBottom: "1px solid #000", padding: "1px", textAlign: "center" }}>
+                      {formatDateShortYear(item.created_at)}
+                    </td>
+                    <td style={{  borderTop: "1px solid #000", borderRight: "1px solid #000",borderBottom: "1px solid #000", padding: "1px", textAlign: "center" }}>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item.id);
+                        }}
                         style={{
                           background: "red",
                           color: "white",
                           border: "none",
-                          borderRadius: "4px",
-                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          fontSize: "0.7rem",
+                          padding: "4px 6px",
                           cursor: "pointer",
                         }}
                         title="Delete coordinate"
                       >
-                        🗑️
+                        🗑
                       </button>
                     </td>
                   </tr>
