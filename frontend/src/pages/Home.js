@@ -367,6 +367,8 @@ export default function Home() {
   
   const { logout } = useContext(UserContext); // folosește logout, nu setUser
   const navigate = useNavigate();
+  const modisRectRef = useRef(null);
+
 
   const handleLogout = () => {
     logout(); // resetează user și storage
@@ -587,15 +589,13 @@ const deleteCoord = async (coordId) => {
 };
 
 
-
 const showRectOnMap = () => {
   if (!mapRef.current) return;
 
-  // Dacă există deja un dreptunghi, îl ștergem
-  if (rectLayerRef.current) {
-    mapRef.current.removeLayer(rectLayerRef.current);
+  // Șterge dreptunghiul anterior MODIS dacă există
+  if (modisRectRef.current) {
+    mapRef.current.removeLayer(modisRectRef.current);
   }
-  
 
   const { x1, y1, x2, y2 } = coordInputs;
   const lon1 = parseFloat(x1);
@@ -603,10 +603,7 @@ const showRectOnMap = () => {
   const lon2 = parseFloat(x2);
   const lat2 = parseFloat(y2);
 
-  if ([lon1, lat1, lon2, lat2].some(isNaN)) {
-    alert("Invalid coordinates. Cannot draw rectangle.");
-    return;
-  }
+  if ([lon1, lat1, lon2, lat2].some(isNaN)) return;
 
   const bounds = [
     [Math.min(lat1, lat2), Math.min(lon1, lon2)],
@@ -614,22 +611,23 @@ const showRectOnMap = () => {
   ];
 
   const rect = L.rectangle(bounds, {
-  color: "#3388ff",      // aceeași culoare ca Leaflet Draw
-  weight: 2,
-  fill: true,
-  fillOpacity: 0.2
-}).addTo(mapRef.current);
+    color: "#3388ff",
+    weight: 2,
+    fillOpacity: 0.2
+  }).addTo(mapRef.current);
 
+  modisRectRef.current = rect;
 
-  // Opțional: facem zoom pe dreptunghi
   mapRef.current.fitBounds(bounds, { padding: [20, 20] });
-
-  if (mapRef.current._historyRect) {
-  mapRef.current.removeLayer(mapRef.current._historyRect);
-}
-mapRef.current._historyRect = rect;
-
 };
+
+const removeModisRect = () => {
+  if (modisRectRef.current && mapRef.current) {
+    mapRef.current.removeLayer(modisRectRef.current);
+    modisRectRef.current = null;
+  }
+};
+
 
 const rectLayerRef = useRef(null);
 
@@ -686,7 +684,7 @@ const rectLayerRef = useRef(null);
       x2: x2.toString(), 
       y2: y2.toString() 
     });
-    //saveBox(x1, y1, x2, y2);
+    saveBox(x1, y1, x2, y2);
 
   };
 
@@ -711,7 +709,22 @@ const rectLayerRef = useRef(null);
         saveBox={saveBox} 
       />
       
-      <ModisButton onClick={() => {}} /> {/* momentan nu face nimic */}
+    <ModisButton 
+  bbox={
+    coordInputs.x1 && coordInputs.y1 && coordInputs.x2 && coordInputs.y2
+      ? [
+          parseFloat(coordInputs.x1),
+          parseFloat(coordInputs.y1),
+          parseFloat(coordInputs.x2),
+          parseFloat(coordInputs.y2),
+        ]
+      : null
+  }
+   mapRef={mapRef} // trecem referința hărții direct
+/>
+
+
+
 
       <div
         style={{

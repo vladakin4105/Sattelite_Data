@@ -15,6 +15,7 @@ from datetime import datetime
 # local module (must exist)
 from sentinel_process import generate_ndvi_png_bytes
 from fastapi import status
+
 # Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("geo-app")
@@ -418,3 +419,67 @@ def ndvi_for_bbox(payload: dict = Body(...)):
     except Exception as e:
         logger.exception("Error in /ndvi")
         raise HTTPException(status_code=500, detail=f"NDVI generation failed: {str(e)}")
+    
+    # --- MODIS analysis endpoint ---
+    # --- MODIS Land Cover classes mapping (MCD12Q1 v6) ---
+MODIS_LC_CLASSES = {
+    0: "Water Bodies: At least 60% of area is covered by permanent water bodies.",
+    1: "Evergreen Needleleaf Forests",
+    2: "Evergreen Broadleaf Forests",
+    3: "Deciduous Needleleaf Forests",
+    4: "Deciduous Broadleaf Forests",
+    5: "Mixed Forests",
+    6: "Closed Shrublands",
+    7: "Open Shrublands",
+    8: "Woody Savannas",
+    9: "Savannas",
+    10: "Grasslands",
+    11: "Permanent Wetlands",
+    12: "Croplands",
+    13: "Urban and Built-Up",
+    14: "Cropland/Natural Vegetation Mosaic",
+    15: "Snow and Ice",
+    16: "Barren or Sparsely Vegetated",
+    17: "Unclassified"
+}
+
+import numpy as np
+from fastapi import Query
+
+@app.get("/modis")
+def get_modis_analysis(
+    x1: float = Query(..., description="Longitude minimum"),
+    y1: float = Query(..., description="Latitude minimum"),
+    x2: float = Query(..., description="Longitude maximum"),
+    y2: float = Query(..., description="Latitude maximum")
+):
+    """
+    Return a summary of land cover classes (MODIS MCD12) for the selected bounding box.
+    Currently uses dummy raster; replace raster_mock with real MODIS dataset extraction later.
+    """
+    # Validate bbox
+    if not (-180 <= x1 <= 180 and -180 <= x2 <= 180 and -90 <= y1 <= 90 and -90 <= y2 <= 90):
+        raise HTTPException(status_code=400, detail="Coordinates out of valid range")
+    
+    # Swap if necessary to ensure min < max
+    lon_min, lon_max = sorted([x1, x2])
+    lat_min, lat_max = sorted([y1, y2])
+    
+    # --- Dummy raster for now ---
+    # In real implementation, replace with MODIS raster extraction for bbox
+    raster_mock = np.random.randint(0, 18, size=(100, 100))  # 100x100 pixels, codes 0-17
+    
+    # Count occurrences of each MODIS class
+    unique, counts = np.unique(raster_mock, return_counts=True)
+    total_pixels = counts.sum()
+    
+    analysis = {}
+    for code, count in zip(unique, counts):
+        desc = MODIS_LC_CLASSES.get(code, f"Unknown class {code}")
+        pct = round(count / total_pixels * 100)
+        analysis[desc] = f"{pct}%"
+    
+    return {
+        "bbox": [lon_min, lat_min, lon_max, lat_max],
+        "analysis": analysis
+    }
