@@ -21,6 +21,7 @@ import History from '../utils/History';
 const PENDING_KEY = "pending_coords";
 
 
+
  
 const defaultIcon = L.icon({
   iconUrl: markerIconPng,
@@ -364,7 +365,7 @@ export default function Home() {
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
   const [ndviActive, setNdviActive] = useState(false);
-  
+  const [historyVersion, setHistoryVersion] = useState(0);
   const { logout } = useContext(UserContext); // folosește logout, nu setUser
   const navigate = useNavigate();
   const modisRectRef = useRef(null);
@@ -571,6 +572,8 @@ const handleMapReady = useCallback((map) => {
     console.error("Error saving coordinates:", err);
     alert("An error occurred while saving coordinates. Please try again.");
   }
+  setHistoryVersion((prev) => prev + 1);
+
 };
 
 const deleteCoord = async (coordId) => {
@@ -684,7 +687,7 @@ const rectLayerRef = useRef(null);
       x2: x2.toString(), 
       y2: y2.toString() 
     });
-    saveBox(x1, y1, x2, y2);
+    //saveBox(x1, y1, x2, y2);
 
   };
 
@@ -926,6 +929,7 @@ const rectLayerRef = useRef(null);
             }}
             onSelect={handleHistorySelect}
             deleteCoord={deleteCoord}
+             version={historyVersion}
           />
         </div>
 

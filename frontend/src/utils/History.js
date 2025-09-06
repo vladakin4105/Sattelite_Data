@@ -1,7 +1,7 @@
- import React, { useState, useContext } from "react";
+ import React, { useState, useContext, useEffect} from "react";
 import { UserContext } from "../context/UserContext";
 
-function History({ fetchHistory, onSelect, deleteCoord }) {
+function History({ fetchHistory, onSelect, deleteCoord, version }) {
   const [isOpen, setIsOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -23,6 +23,19 @@ function History({ fetchHistory, onSelect, deleteCoord }) {
     }
     setIsOpen(!isOpen);
   };
+
+  useEffect(() => {
+    if (!user || user.username === "guest" || !isOpen) return;
+    const load = async () => {
+      try {
+        const data = await fetchHistory();
+        setHistory(data);
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      }
+    };
+    load();
+  }, [version]); 
 
   const handleRowDoubleClick = (item, index) => {
     setSelectedIndex(index);

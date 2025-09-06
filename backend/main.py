@@ -423,7 +423,7 @@ def ndvi_for_bbox(payload: dict = Body(...)):
     # --- MODIS analysis endpoint ---
     # --- MODIS Land Cover classes mapping (MCD12Q1 v6) ---
 MODIS_LC_CLASSES = {
-    0: "Water Bodies: At least 60% of area is covered by permanent water bodies.",
+    0: "Water Bodies",
     1: "Evergreen Needleleaf Forests",
     2: "Evergreen Broadleaf Forests",
     3: "Deciduous Needleleaf Forests",
