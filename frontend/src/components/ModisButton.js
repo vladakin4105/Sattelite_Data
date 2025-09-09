@@ -97,9 +97,14 @@ function ModisButton({ bbox, mapRef }) {
         >
           <h4 style={{ marginBottom: "0.5rem" }}>MODIS Results:</h4>
           <ul style={{ paddingLeft: "1rem" }}>
-            {Object.entries(result).map(([k, v]) => (
-              <li key={k}>
-                <strong>{k}:</strong> {v}
+            {Object.entries(result).map(([landCoverType, data]) => (
+              <li key={landCoverType} style={{ marginBottom: "0.3rem" }}>
+                <strong>{landCoverType}:</strong>
+                <div style={{ marginLeft: "1rem", fontSize: "0.85em" }}>
+                  <div>Pixeli: {data.pixels}</div>
+                  <div>Procent: {data.percentage.toFixed(2)}%</div>
+                  <div>Suprafață: {data.area_km2.toFixed(2)} km²</div>
+                </div>
               </li>
             ))}
           </ul>
