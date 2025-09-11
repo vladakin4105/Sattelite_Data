@@ -1,5 +1,6 @@
 // About.js
 import React from "react";
+import diagramImage from "../assets/networkdiagram.drawio.png";
 
 export default function About() {
   return (
@@ -34,11 +35,8 @@ export default function About() {
           This application leverages <b>NASA’s MODIS satellite data</b> to
           provide insights into agricultural fields and land usage. By selecting
           an area of interest on the map, users can generate tailored analyses
-          that highlight vegetation health, crop monitoring, and environmental
-          conditions. <br />
+          that highlight vegetation status and environmental conditions. <br />
         </p>
-
-      
 
         {/* Image row */}
         <div
@@ -136,11 +134,122 @@ export default function About() {
             Our Mission
           </h2>
           <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-            We aim to make satellite-driven agricultural monitoring more
-            accessible. Farmers, researchers, and decision-makers can use our
-            tool to understand how land evolves over time, assess crop health,
-            and react quickly to environmental changes.
+              Our platform empowers users to <strong>identify and analyze land types</strong> directly from satellite data. 
+          By selecting specific territories, users can instantly see whether the land is 
+          <strong> agricultural, urban, water-covered, or natural</strong> based on MODIS satellite analysis.
           </p>
+           <p>
+          Additionally, they can apply the 
+          <strong> NDVI (Normalized Difference Vegetation Index)</strong> filter to measure vegetation health 
+          and monitor land productivity.
+        </p>
+        <p>
+          This tool is not only valuable for researchers, but also for 
+          <strong> farmers, investors, and real estate developers</strong> who need reliable insights 
+          before making strategic decisions about land use.
+        </p>
+        </div>
+
+        {/* Business Value */}
+        <div
+          style={{
+            marginTop: "3rem",
+            textAlign: "left",
+            maxWidth: "900px",
+            marginInline: "auto",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.8rem",
+              marginBottom: "1rem",
+              color: "#34495e",
+            }}
+          >
+            Business Value
+          </h2>
+          <p>
+          With growing pressure on land resources, 
+          <strong> transparent and data-driven land evaluation</strong> is essential. 
+          Our solution transforms raw satellite data into 
+          <strong> actionable business intelligence</strong>:
+        </p>
+        <ul>
+          <li><strong>Farmers</strong> can validate crop areas and monitor productivity.</li>
+          <li><strong>Investors</strong> can identify underutilized agricultural zones.</li>
+          <li><strong>Real estate developers</strong> can evaluate if land is suitable for construction or other projects.</li>
+          <li><strong>Government and NGOs</strong> can use the tool for environmental monitoring and planning.</li>
+        </ul>
+        <p>
+          In the near future, we aim to integrate 
+          <strong> predictive pricing filters</strong>, enabling users to estimate 
+          <strong> land value trends</strong> and make smarter buy/sell decisions.
+        </p>
+        </div>
+
+        {/* App Features */}
+        <div
+          style={{
+            marginTop: "3rem",
+            textAlign: "left",
+            maxWidth: "900px",
+            marginInline: "auto",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.8rem",
+              marginBottom: "1rem",
+              color: "#34495e",
+            }}
+          >
+            Application Features
+          </h2>
+          <ul style={{ fontSize: "1.1rem", lineHeight: "1.8" }}>
+            <li>
+              Secure <b>user login and authentication</b> backed by a SQL database.
+            </li>
+            <li>
+              <b>Select territories</b> directly on the map for targeted analysis.
+            </li>
+            <li>
+              Apply filters like <b>NDVI</b> or <b>MODIS analyse</b>.
+            </li>
+            <li>
+              Automatic <b>data saving</b> and personalized history of analyzed coordinates.
+            </li>
+            <li>
+              Intuitive dashboard with <b>real-time results</b> and visualization of insights.
+            </li>
+          </ul>
+        </div>
+
+        {/* Architecture Diagram */}
+        <div
+          style={{
+            marginTop: "3rem",
+            textAlign: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.8rem",
+              marginBottom: "1rem",
+              color: "#34495e",
+            }}
+          >
+            System Architecture
+          </h2>
+          <img
+            src={diagramImage}
+            alt="System Architecture Diagram"
+            style={{
+              width: "80%",
+              maxWidth: "900px",
+              borderRadius: "12px",
+              boxShadow: "0px 4px 15px rgba(0,0,0,0.3)",
+            }}
+          />
         </div>
       </div>
 

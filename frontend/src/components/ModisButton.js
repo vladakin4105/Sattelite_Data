@@ -82,8 +82,8 @@ function ModisButton({ bbox, mapRef }) {
         {loading
           ? "Loading MODIS..."
           : visible
-          ? "Hide MODIS Analysis"
-          : "MODIS Analysis"}
+          ? "Hide Land C lassification"
+          : "Land Cover Classification"}
       </button>
 
       {visible && result && (
