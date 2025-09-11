@@ -15,6 +15,10 @@ from datetime import datetime
 # local module (must exist)
 from sentinel_process import generate_ndvi_png_bytes
 from fastapi import status
+import numpy as np
+from modis import MODISAnalyzer, main as modis_main
+
+
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -443,8 +447,6 @@ MODIS_LC_CLASSES = {
     17: "Unclassified"
 }
 
-import numpy as np
-from fastapi import Query
 
 @app.get("/modis")
 def get_modis_analysis(
@@ -465,6 +467,19 @@ def get_modis_analysis(
     lon_min, lon_max = sorted([x1, x2])
     lat_min, lat_max = sorted([y1, y2])
     
+    bbox = (lon_min, lat_min, lon_max, lat_max)
+
+    analyzer, stats = modis_main(bbox=bbox)
+    if analyzer is None or stats is None:
+        raise HTTPException(
+            status_code=500, 
+            detail="MODIS analysis failed - could not retrieve data for the specified region"
+        )
+    
+    analysis = {
+        "land_cover_stats": stats,
+        "legend_html": analyzer._create_legend_html()
+    }
     # --- Dummy raster for now ---
     # In real implementation, replace with MODIS raster extraction for bbox
     raster_mock = np.random.randint(0, 18, size=(100, 100))  # 100x100 pixels, codes 0-17
@@ -479,7 +494,9 @@ def get_modis_analysis(
         pct = round(count / total_pixels * 100)
         analysis[desc] = f"{pct}%"
     
+    
+
     return {
         "bbox": [lon_min, lat_min, lon_max, lat_max],
-        "analysis": analysis
+        "analysis": stats
     }

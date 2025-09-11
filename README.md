@@ -2,26 +2,79 @@
 
 ## Structure:
 ```
-  ├── docker-compose.yml
-  ├── backend/
-  │   ├── Dockerfile
-  │   ├── requirements.txt
-  │   ├── sentinel_process.py
-  │   └── main.py                         
-  └── frontend/
-      ├── Dockerfile
-      ├── package.json
-      ├── public/
-      │   └── index.html
-      └── src/
-          ├── index.js
-          ├── App.js
-          ├── context/UserContext.js
-          ├── utils/api.js
-          └── pages/
-              ├── Home.js
-              ├── About.js
-              └── Stats.js
+summer_app/
+├── compose.yaml
+├── backend/
+│   ├── Dockerfile
+│   ├── main.py
+│   ├── modis.py
+│   ├── requirements.txt
+│   └── sentinel_process.py
+└── frontend/
+    ├── Dockerfile
+    ├── package.json
+    ├── package-lock.json
+    ├── public/
+    │   └── index.html
+    └── src/
+        ├── App.js
+        ├── index.css
+        ├── index.js
+        ├── assets/
+        │   ├── arrows-move.svg
+        │   └── hexagon.svg
+        ├── components/
+        │   ├── CoordinateForm.js
+        │   ├── ModisButton.js
+        │   ├── NdviButton.js
+        │   └── ParcelSelector.js
+        ├── context/
+        │   └── UserContext.js
+        ├── pages/
+        │   ├── About.js
+        │   ├── Auth.js
+        │   ├── Home.js
+        │   ├── Home2.js
+        │   ├── index.js
+        │   ├── Stats.js
+        │   ├── components/
+        │   │   ├── HistoryPanel/
+        │   │   │   ├── HistoryPanel.js
+        │   │   │   └── index.js
+        │   │   ├── MapContainer/
+        │   │   │   ├── index.js
+        │   │   │   ├── MapContainer.js
+        │   │   │   ├── MapInitializer.js
+        │   │   │   └── MapMenuControl.js
+        │   │   ├── NdviOverlay/
+        │   │   │   ├── index.js
+        │   │   │   └── NdviOverlay.js
+        │   │   └── SidePanel/
+        │   │       ├── ActionButtons.js
+        │   │       ├── CoordinateForm.js
+        │   │       ├── index.js
+        │   │       ├── SidePanel.js
+        │   │       └── UserInfo.js
+        │   ├── constants/
+        │   │   ├── mapConfig.js
+        │   │   └── styleConfig.js
+        │   ├── hooks/
+        │   │   ├── useCoordinateLogic.js
+        │   │   ├── useCoordinates.js
+        │   │   ├── useGuestStorage.js
+        │   │   ├── useMapSetup.js
+        │   │   ├── useNdviOverlay.js
+        │   │   └── useUserActions.js
+        │   └── services/
+        │       ├── coordinateService.js
+        │       ├── ndviService.js
+        │       └── userService.js
+        └── utils/
+            ├── api.js
+            ├── geo.js
+            ├── History.js
+            └── mapMenu.js
+
 ```
 ## Description
 
