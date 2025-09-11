@@ -494,6 +494,8 @@ def get_modis_analysis(
         pct = round(count / total_pixels * 100)
         analysis[desc] = f"{pct}%"
     
+    
+
     return {
         "bbox": [lon_min, lat_min, lon_max, lat_max],
         "analysis": stats

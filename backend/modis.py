@@ -47,7 +47,7 @@ class MODISAnalyzer:
             16: 'Unclassified'
         }
 
-    def get_modis_data(self, year=2024,lc_type=1):
+    def get_modis_data(self, year=2024,lc_type=2):
         collection = ee.ImageCollection('MODIS/061/MCD12Q1')
 
         start_date = f'{year}-01-01'
@@ -67,7 +67,7 @@ class MODISAnalyzer:
             maxPixels=1e9
         )
         
-        lc_hist = histogram.getInfo()[f'LC_Type1']
+        lc_hist = histogram.getInfo()[f'LC_Type2']
 
         if lc_hist is None:
             print("Nu există date pentru zona specificată.")
@@ -107,8 +107,6 @@ class MODISAnalyzer:
         
         legend_html += '</div>'
         return legend_html
-    
-
 
 def authenticate_earth_engine():
     load_dotenv()
@@ -118,9 +116,6 @@ def authenticate_earth_engine():
 
     credentials = ee.ServiceAccountCredentials(None, credentials_path)
     ee.Initialize(credentials, project=project_id)
-
-
-
 
 def main(bbox=None):
     if not ee.data._initialized:
@@ -143,6 +138,8 @@ def main(bbox=None):
         if stats:
             for lc_type, data in stats.items():
                 print(f"{lc_type}: {data['pixels']} pixeli, {data['percentage']:.2f}%, {data['area_km2']:.2f} km²")
+            
+            
             return analyzer, stats
         else:
             print("Nu s-au găsit date de acoperire terestră pentru zona specificată.")

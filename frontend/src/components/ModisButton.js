@@ -36,6 +36,7 @@ function ModisButton({ bbox, mapRef }) {
       if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
       setResult(data.analysis);
+  
       setVisible(true);
 
       // Desenăm dreptunghiul MODIS independent
