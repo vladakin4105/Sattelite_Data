@@ -424,28 +424,10 @@ def ndvi_for_bbox(payload: dict = Body(...)):
         logger.exception("Error in /ndvi")
         raise HTTPException(status_code=500, detail=f"NDVI generation failed: {str(e)}")
     
-    # --- MODIS analysis endpoint ---
-    # --- MODIS Land Cover classes mapping (MCD12Q1 v6) ---
-MODIS_LC_CLASSES = {
-    0: "Water Bodies",
-    1: "Evergreen Needleleaf Forests",
-    2: "Evergreen Broadleaf Forests",
-    3: "Deciduous Needleleaf Forests",
-    4: "Deciduous Broadleaf Forests",
-    5: "Mixed Forests",
-    6: "Closed Shrublands",
-    7: "Open Shrublands",
-    8: "Woody Savannas",
-    9: "Savannas",
-    10: "Grasslands",
-    11: "Permanent Wetlands",
-    12: "Croplands",
-    13: "Urban and Built-Up",
-    14: "Cropland/Natural Vegetation Mosaic",
-    15: "Snow and Ice",
-    16: "Barren or Sparsely Vegetated",
-    17: "Unclassified"
-}
+
+
+
+
 
 
 @app.get("/modis")
@@ -476,27 +458,13 @@ def get_modis_analysis(
             detail="MODIS analysis failed - could not retrieve data for the specified region"
         )
     
-    analysis = {
-        "land_cover_stats": stats,
-        "legend_html": analyzer._create_legend_html()
-    }
-    # --- Dummy raster for now ---
-    # In real implementation, replace with MODIS raster extraction for bbox
-    raster_mock = np.random.randint(0, 18, size=(100, 100))  # 100x100 pixels, codes 0-17
-    
-    # Count occurrences of each MODIS class
-    unique, counts = np.unique(raster_mock, return_counts=True)
-    total_pixels = counts.sum()
-    
-    analysis = {}
-    for code, count in zip(unique, counts):
-        desc = MODIS_LC_CLASSES.get(code, f"Unknown class {code}")
-        pct = round(count / total_pixels * 100)
-        analysis[desc] = f"{pct}%"
-    
+    tile_url = analyzer.get_tile_url(year=2024, lc_type=2)
+    legend = analyzer.get_legend()
     
 
     return {
         "bbox": [lon_min, lat_min, lon_max, lat_max],
-        "analysis": stats
+        "analysis": stats,
+        "tile_url": tile_url,
+        "legend": legend
     }

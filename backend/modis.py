@@ -107,6 +107,25 @@ class MODISAnalyzer:
         
         legend_html += '</div>'
         return legend_html
+    
+    def get_tile_url(self, year=2024, lc_type=2):
+        modis_image = self.get_modis_data(year, lc_type)
+
+        vis_params = {
+            'min': 0,
+            'max': 16,
+            'palette': list(self.lc_colors.values())
+        }
+        map_id_dict = modis_image.getMapId(vis_params)
+        return map_id_dict["tile_fetcher"].url_format
+    
+    def get_legend(self):
+        """Returnează un dict simplu pentru legendă (clasă → culoare)"""
+        legend = {}
+        for class_id, color in self.lc_colors.items():
+            if class_id in self.lc_names:
+                legend[self.lc_names[class_id]] = color
+        return legend
 
 def authenticate_earth_engine():
     load_dotenv()

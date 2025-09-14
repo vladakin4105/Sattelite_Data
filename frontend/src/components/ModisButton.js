@@ -6,11 +6,21 @@ function ModisButton({ bbox, mapRef }) {
   const [result, setResult] = useState(null);
   const [visible, setVisible] = useState(false);
   const modisRectRef = useRef(null);
+  const modisLayerRef = useRef(null);
+  const legendControlRef = useRef(null);
 
   const clearPreviousRect = () => {
     if (modisRectRef.current && mapRef.current) {
       mapRef.current.removeLayer(modisRectRef.current);
       modisRectRef.current = null;
+    }
+    if (modisLayerRef.current && mapRef.current) {
+      mapRef.current.removeLayer(modisLayerRef.current);
+      modisLayerRef.current = null;
+    }
+    if (legendControlRef.current && mapRef.current) {
+      mapRef.current.removeControl(legendControlRef.current);
+      legendControlRef.current = null;
     }
   };
 
@@ -35,8 +45,8 @@ function ModisButton({ bbox, mapRef }) {
       );
       if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
+
       setResult(data.analysis);
-  
       setVisible(true);
 
       // Desenăm dreptunghiul MODIS independent
@@ -49,11 +59,53 @@ function ModisButton({ bbox, mapRef }) {
         const rect = L.rectangle(bounds, {
           color: "#ff7800",
           weight: 2,
-          fillOpacity: 0.2
+          fillOpacity: 0.1
         }).addTo(mapRef.current);
         modisRectRef.current = rect;
+
+        if (data.tile_url) {
+          const modisLayer = L.tileLayer(data.tile_url, {
+            opacity: 0.6
+          });
+          modisLayer.addTo(mapRef.current);
+          modisLayerRef.current = modisLayer;
+        }
+
+        if (data.legend) {
+          const legendControl = L.control({ position: "bottomright" });
+          legendControl.onAdd = () => {
+            const div = L.DomUtil.create("div", "info legend");
+            div.style.background = "rgba(128,128,128,0.6)";
+            div.style.padding = "6px";
+            div.style.border = "1px solid #555";
+            div.style.borderRadius = "6px";
+            div.style.maxHeight = "180px";
+            div.style.overflowY = "auto";
+            div.style.fontSize = "1w0px";
+            div.style.color = "black";
+            const labels = [];
+            for (const [name, color] of Object.entries(data.legend)) {
+              labels.push(
+                `<div style="display:flex; align-items:center; margin-bottom:4px;">
+                  <span style="display:inline-block; width:18px; height:18px; background:${color}; margin-right:6px; border:1px solid #999;"></span>
+                  ${name}
+                </div>`
+              );
+            }
+            div.innerHTML = `<h4 style="margin:0 0 6px 0;">Legend</h4>${labels.join("")}`;
+            return div;
+          };
+          legendControl.addTo(mapRef.current);
+          legendControlRef.current = legendControl;
+        }
+
+
         mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+      
+      
       }
+
+        
 
     } catch (err) {
       console.error("Error fetching MODIS analysis:", err);
@@ -102,13 +154,14 @@ function ModisButton({ bbox, mapRef }) {
               <li key={landCoverType} style={{ marginBottom: "0.3rem" }}>
                 <strong>{landCoverType}:</strong>
                 <div style={{ marginLeft: "1rem", fontSize: "0.85em" }}>
-                  <div>Pixeli: {data.pixels}</div>
-                  <div>Procent: {data.percentage.toFixed(2)}%</div>
-                  <div>Suprafață: {data.area_km2.toFixed(2)} km²</div>
+                  <div>Pixels: {data.pixels}</div>
+                  <div>Percentage: {data.percentage.toFixed(2)}%</div>
+                  <div>Area: {data.area_km2.toFixed(2)} km²</div>
                 </div>
               </li>
             ))}
           </ul>
+          
         </div>
       )}
     </div>

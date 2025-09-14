@@ -1,53 +1,26 @@
-// About.js
-import React from "react";
-import diagramImage from "../assets/networkdiagram.drawio.png";
+// src/pages/About.js
+import React, { useEffect, useRef, useState } from "react";
+import diagramImage from "../assets/Architecture.drawio.png";
+import networkDiagram from "../assets/networkdiagram.drawio.png";
+import ModisImage from "../assets/image.png";
+import { ABOUT_STYLES } from "./constants/AboutStyleConfig";
+import { HorizontalSatelliteBanner, DataFlowDiagram, createLandCoverAnimation} from './constants/AboutAnimations';
 
-export default function About() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-        background: "linear-gradient(to bottom, #e6f2ff, #f7fff0)", // albastru spre verde pal
-      }}
-    >
-      {/* Main content */}
-      <div style={{ flex: 1, padding: "2rem", textAlign: "center" }}>
-        <h1
-          style={{
-            fontSize: "2.5rem",
-            marginBottom: "1rem",
-            color: "#2c3e50",
-          }}
-        >
-          About Our Land Analysis Platform
-        </h1>
-        <p
-          style={{
-            fontSize: "1.2rem",
-            maxWidth: "800px",
-            margin: "0 auto",
-            lineHeight: "1.6",
-          }}
-        >
-          This application leverages <b>NASA’s MODIS satellite data</b> to
-          provide insights into agricultural fields and land usage. By selecting
-          an area of interest on the map, users can generate tailored analyses
-          that highlight vegetation status and environmental conditions. <br />
+
+const slidesContent = [
+  {
+    id: "intro",
+    title: "About Our Land Analysis Platform",
+    body: (
+      <>
+        <p style={{ marginTop: "48px"}}>
+          This application leverages <strong>NASA’s MODIS satellite data</strong> to provide
+          insights into agricultural fields and land usage. By selecting an area of interest
+          on the map, users can generate tailored analyses that highlight vegetation status
+          and environmental conditions.
         </p>
-
-        {/* Image row */}
-        <div
-          style={{
-            marginTop: "2.5rem",
-            display: "flex",
-            justifyContent: "center",
-            gap: "2rem",
-            flexWrap: "wrap",
-          }}
-        >
+        <hr style={{ margin: "48px 0" }} />
+        <div style={ABOUT_STYLES.imagesRow}>
           {[
             {
               href: "https://earthobservatory.nasa.gov/",
@@ -70,203 +43,274 @@ export default function About() {
               href={img.href}
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                display: "block",
-                transition: "transform 0.3s, box-shadow 0.3s",
-              }}
+              style={ABOUT_STYLES.resourceLink}
             >
               <img
                 src={img.src}
                 alt={img.alt}
-                style={{
-                  width: "280px",
-                  height: "180px",
-                  objectFit: "cover",
-                  borderRadius: "12px",
-                  boxShadow: "0px 4px 10px rgba(0,0,0,0.25)",
-                  cursor: "pointer",
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                }}
+                style={ABOUT_STYLES.resourceImg}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
-                  e.currentTarget.style.boxShadow =
-                    "0px 6px 16px rgba(0,0,0,0.35)";
+                  e.currentTarget.style.transform = "scale(1.035)";
+                  e.currentTarget.style.boxShadow = "0 10px 26px rgba(0,0,0,0.18)";
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow =
-                    "0px 4px 10px rgba(0,0,0,0.25)";
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = ABOUT_STYLES.resourceImg.boxShadow;
                 }}
               />
             </a>
           ))}
         </div>
-        Learn more at{" "}
-        <a
-          href="https://modis.gsfc.nasa.gov/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            color: "#1e90ff",
-            fontWeight: "bold",
-            textDecoration: "none",
-          }}
-        >
-          NASA MODIS
-        </a>
+        <p style={{ marginTop: "1rem", textAlign: "center" }}>
+          Learn more at{" "}
+          <a href="https://modis.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">
+            <strong>NASA MODIS</strong>
+          </a>
+        </p>
+      </>
+    ),
+  },
+  
+  {
+    id: "mission & business",
+    title: "Our Mission & Business Value",
+    body: (
+      <>
+        <p>
+          Our platform empowers users to <strong>identify and analyze land types</strong> directly from satellite data.
+          By selecting specific territories, users can instantly see whether the land is <strong>agricultural, urban, water-covered, or natural</strong>.
+        </p>
 
-        {/* Mission/goal section */}
-        <div
-          style={{
-            marginTop: "3rem",
-            textAlign: "left",
-            maxWidth: "900px",
-            marginInline: "auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.8rem",
-              marginBottom: "1rem",
-              color: "#34495e",
-            }}
-          >
-            Our Mission
-          </h2>
-          <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-              Our platform empowers users to <strong>identify and analyze land types</strong> directly from satellite data. 
-          By selecting specific territories, users can instantly see whether the land is 
-          <strong> agricultural, urban, water-covered, or natural</strong> based on MODIS satellite analysis.
-          </p>
-           <p>
-          Additionally, they can apply the 
-          <strong> NDVI (Normalized Difference Vegetation Index)</strong> filter to measure vegetation health 
+        <p>
+          Additionally, users can apply the <strong>NDVI (Normalized Difference Vegetation Index)</strong> filter to measure vegetation health
           and monitor land productivity.
         </p>
-        <p>
-          This tool is not only valuable for researchers, but also for 
-          <strong> farmers, investors, and real estate developers</strong> who need reliable insights 
-          before making strategic decisions about land use.
-        </p>
-        </div>
 
-        {/* Business Value */}
-        <div
-          style={{
-            marginTop: "3rem",
-            textAlign: "left",
-            maxWidth: "900px",
-            marginInline: "auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.8rem",
-              marginBottom: "1rem",
-              color: "#34495e",
-            }}
-          >
-            Business Value
-          </h2>
-          <p>
-          With growing pressure on land resources, 
-          <strong> transparent and data-driven land evaluation</strong> is essential. 
-          Our solution transforms raw satellite data into 
-          <strong> actionable business intelligence</strong>:
+        
+        <HorizontalSatelliteBanner />
+
+
+        <p>
+          With growing pressure on land resources, <strong>transparent and data-driven land evaluation</strong> is essential.
+          Our solution transforms raw satellite data into <strong>actionable business intelligence</strong>.
         </p>
-        <ul>
+
+        <ul style={ABOUT_STYLES.aboutList}>
           <li><strong>Farmers</strong> can validate crop areas and monitor productivity.</li>
           <li><strong>Investors</strong> can identify underutilized agricultural zones.</li>
           <li><strong>Real estate developers</strong> can evaluate if land is suitable for construction or other projects.</li>
           <li><strong>Government and NGOs</strong> can use the tool for environmental monitoring and planning.</li>
         </ul>
-        <p>
-          In the near future, we aim to integrate 
-          <strong> predictive pricing filters</strong>, enabling users to estimate 
-          <strong> land value trends</strong> and make smarter buy/sell decisions.
-        </p>
-        </div>
-
-        {/* App Features */}
-        <div
-          style={{
-            marginTop: "3rem",
-            textAlign: "left",
-            maxWidth: "900px",
-            marginInline: "auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.8rem",
-              marginBottom: "1rem",
-              color: "#34495e",
-            }}
-          >
-            Application Features
-          </h2>
-          <ul style={{ fontSize: "1.1rem", lineHeight: "1.8" }}>
-            <li>
-              Secure <b>user login and authentication</b> backed by a SQL database.
-            </li>
-            <li>
-              <b>Select territories</b> directly on the map for targeted analysis.
-            </li>
-            <li>
-              Apply filters like <b>NDVI</b> or <b>MODIS analyse</b>.
-            </li>
-            <li>
-              Automatic <b>data saving</b> and personalized history of analyzed coordinates.
-            </li>
-            <li>
-              Intuitive dashboard with <b>real-time results</b> and visualization of insights.
-            </li>
+      </>
+    ),
+  },
+  {
+    id: "features",
+    title: "Application Features",
+    body: (
+      <>
+        <div style={{ justifyContent: "center", display: "flex", flexDirection: "row", gap: "16px" }}>
+          <ul style={ABOUT_STYLES.aboutList}>
+            <li>Secure <strong>user authentication</strong> backed by SQL.</li>
+            <li><strong>Select territories</strong> directly on the map for targeted analysis.</li>
+            <li>Apply <strong>NDVI</strong> and <strong>MODIS</strong> analysis filters.</li>
+            <li>Automatic <strong>data saving</strong> and personalized history.</li>
+            <li>Intuitive <strong>real-time visualization</strong>.</li>
           </ul>
+          <div style={{ textAlign: "center", marginTop: "16px" }}>
+            <img src={networkDiagram} alt="Network Diagram" style={ABOUT_STYLES.architectureImg} />
+          </div>
         </div>
+        
+      </>
+    ),
+  },
+  {
+  id: "ndvi",
+  title: "NDVI Analysis",
+  body: (
+    <>
+      <p>
+        The NDVI (Normalized Difference Vegetation Index) is a key metric for assessing vegetation health and
+        monitoring land productivity. By analyzing satellite data, users can gain insights into crop health,
+        identify stressed areas, and make informed decisions about resource allocation.
+      </p>
+      <DataFlowDiagram />
+      <p>
+        Our platform allows users to apply NDVI analysis filters to specific territories, enabling targeted
+        assessments and facilitating precision agriculture practices.
+      </p>
 
-        {/* Architecture Diagram */}
-        <div
-          style={{
-            marginTop: "3rem",
-            textAlign: "center",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.8rem",
-              marginBottom: "1rem",
-              color: "#34495e",
+      {/* formula box */}
+      <div title="NDVI Formula" style={ABOUT_STYLES.formulaBox}>
+        <p style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700" }}>NDVI Script</p>
+
+        {/* original implementation (readable, copyable) */}
+        <pre style={ABOUT_STYLES.codeBlock}>
+      {
+`       function setup() {
+        return {
+          input: [{ bands: ["B04", "B08", "dataMask"] }],
+          output: { bands: 4, sampleType: "UINT8" }
+        };
+      }
+
+      function evaluatePixel(sample) {
+        let val = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
+        imgVals = compute(val);
+        imgVals.push(sample.dataMask * 255);
+        return imgVals;
+      }`}
+        </pre>
+      </div>
+    </>
+  )
+},{
+    id: "MODIS",
+    title: "Land Cover Classification Type UMD with MODIS",
+    body: (
+      <>
+        <p>
+          The MODIS Land Cover Type product provides global land cover classification at a 500-meter resolution and <strong style={{color: "#990000"}}> temporal resolution of one year </strong>.
+        </p>
+        {createLandCoverAnimation()}
+        <div style={{ marginTop: "12px", display: "flex", flexDirection: "row", justifyContent: "center" , alignItems: "center", gap: "16px"}}>
+          
+          <p style={{ marginBottom: "12px"}}>
+            The UMD Land Cover Classification is based on MODIS data and provides insights into land cover changes over time. <br />
+            Types:<br />
+            <ul style={{ fontSize: "0.8rem" }}>
+              <li>0: 'Water bodies'</li>
+              <li>1: 'Evergreen Needleleaf Forests'</li>
+              <li>2: 'Evergreen Broadleaf Forests'</li>
+              <li>3: 'Deciduous Needleleaf Forests'</li>
+              <li>4: 'Deciduous Broadleaf Forests'</li>
+              <li>5: 'Mixed Forests'</li>
+              <li>6: 'Closed Shrublands'</li>
+              <li>7: 'Open Shrublands'</li>
+              <li>8: 'Woody Savannas'</li>
+              <li>9: 'Savannas'</li>
+              <li>10: 'Grasslands'</li>
+              <li>11: 'Permanent Wetlands'</li>
+              <li>12: 'Croplands'</li>
+              <li>13: 'Urban and Built-up Lands'</li>
+              <li>14: 'Cropland/Natural Vegetation Mosaics'</li>
+              <li>15: 'Permanent Snow and Ice'</li>
+              <li>16: 'Unclassified'</li>
+            </ul>
+          </p>
+          <img src={ModisImage} alt="MODIS Land Cover Classification" style={{ borderRadius: "8px" , width: "50%", height: "auto"}} />
+        </div>
+        
+      </>
+    )
+},
+  {
+    id: "architecture",
+    title: "System Architecture",
+    body: (
+      <>
+        <div style={{ textAlign: "center" }}>
+          <img src={diagramImage} alt="System Architecture Diagram" style={ABOUT_STYLES.architectureImg} />
+        </div>
+        <p style={{ marginLeft: "1rem", marginRight: "1rem", padding: "1rem" , justifyContent: "center", gap: "8px"}}>
+          The application is a modular, scalable pipeline:<br />The React/Leaflet frontend captures user-selected areas and requests analyses from a FastAPI backend. The backend manages calls to satellite-processing services (Sentinel Hub / Google Earth Engine) to produce NDVI and MODIS land-cover outputs, caches generated tiles/images, and stores data and user coordinates in a Postgres database. Results are returned as <strong>map overlays</strong> or <strong>JSON reports</strong>.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "footer",
+    title: "Thank you",
+    body: (
+      <>
+        <p>© {new Date().getFullYear()} Land Analysis Platform — Built with ❤️ by our team
+          <br />
+          Team Members: <strong> Costea Carmen Andreea, Mangiurea Alina-Daniela, Popescu George-Vlad</strong>
+        </p>
+        <p style={{ fontSize: "0.9rem", color: "#666" }}>Scroll up to review slides or use the side dots navigation.</p>
+        
+      </>
+      
+    ),
+  },
+];
+
+export default function About() {
+  const containerRef = useRef(null);
+  const slideRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    slideRefs.current = slideRefs.current.slice(0, slidesContent.length);
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const options = { root: container, threshold: 0.6 };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const idx = Number(entry.target.getAttribute("data-index"));
+          setActiveIndex(idx);
+        }
+      });
+    }, options);
+
+    slideRefs.current.forEach((el) => { if (el) observer.observe(el); });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollTo = (idx) => {
+    const el = slideRefs.current[idx];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const goPrev = () => { if (activeIndex > 0) scrollTo(activeIndex - 1); };
+  const goNext = () => { if (activeIndex < slidesContent.length - 1) scrollTo(activeIndex + 1); };
+
+  return (
+    <div ref={containerRef} style={ABOUT_STYLES.container}>
+      <div style={ABOUT_STYLES.slidesWrapper}>
+        {slidesContent.map((slide, idx) => (
+          <section
+            key={slide.id}
+            data-index={idx}
+            ref={(el) => (slideRefs.current[idx] = el)}
+            style={{ 
+              ...ABOUT_STYLES.slide, 
+              background: ABOUT_STYLES.variantBackgrounds[slide.id] || ABOUT_STYLES.variantBackgrounds.intro 
             }}
           >
-            System Architecture
-          </h2>
-          <img
-            src={diagramImage}
-            alt="System Architecture Diagram"
-            style={{
-              width: "80%",
-              maxWidth: "900px",
-              borderRadius: "12px",
-              boxShadow: "0px 4px 15px rgba(0,0,0,0.3)",
-            }}
-          />
-        </div>
+            <div style={ABOUT_STYLES.slideInner}>
+              <h2 style={ABOUT_STYLES.slideTitle}>{slide.title}</h2>
+              <div style={ABOUT_STYLES.slideBody}>{slide.body}</div>
+            </div>
+          </section>
+        ))}
+        
       </div>
 
-      {/* Footer */}
-      <footer
-        style={{
-          backgroundColor: "#2c3e50",
-          color: "white",
-          textAlign: "center",
-          padding: "1rem",
-        }}
-      >
-        <p>
-          © {new Date().getFullYear()} Land Analysis Platform — Built with ❤️ by
-          our team
-        </p>
-      </footer>
+      {/* dots */}
+      <nav style={ABOUT_STYLES.dotsNav} aria-hidden>
+        {slidesContent.map((s, i) => {
+          const base = { ...ABOUT_STYLES.dot };
+          const style = i === activeIndex ? { ...base, ...ABOUT_STYLES.dotActive } : base;
+          return (
+            <button
+              key={s.id}
+              onClick={() => scrollTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              style={style}
+            />
+          );
+        })}
+        
+      </nav>
+      
     </div>
   );
 }
