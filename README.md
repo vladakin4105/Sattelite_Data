@@ -78,6 +78,14 @@ summer_app/
 ```
 ## Description
 
+This App's purpose is to help with Land cover type and mainly agriculture area insights by providing simple yet effective analysis features.
+
+Currently implemented features:
+- NDVI  -->  vegetation index monitoring
+- MCD12Q1 (LC_Type2 => UMD classification)  --> land cover type classification and visualisation
+
+signIn/signUp as user for permanent coordinates selection storage (data base usage) or use the app as guest with a temporary storage
+
 ---
 
 ## Installation
@@ -87,6 +95,24 @@ summer_app/
 ```
 git clone https://github.com/vladakin4105/Sattelite_Data.git
 ```
+
+#### Important!
+keep in mind for the properly working of the app you will have to add a .env on the level with compose.yaml that contains:
+```
+POSTGRES_USER=...    ---GEO_USER---
+POSTGRES_PASSWORD=...   ---parola---
+POSTGRES_DB=...    ---todo_db---
+DATABASE_URL=...     ---adresa db ca in exemplu:    postgresql://---GEO_USER---:---parola---@db:5432/---todo_db---     ---
+SH_CLIENT_ID=...      ---Sentinel-hub client id format string---
+SH_CLIENT_SECRET=...        ---Sentinel-hub client secret format string---
+SH_BASE_URL=...      ---"https://sh.dataspace.copernicus.eu"---
+SH_TOKEN_URL=...      ---"https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"---
+HOME=/tmp
+GOOGLE_APPLICATION_CREDENTIALS=...    ---google cloud credentials-key format .json file same level as the .env file---
+GOOGLE_CLOUD_PROJECT=...     ---google cloud project name(ID)---
+```
+
+
 ### docker desktop 
 
 simple install on oficiall site:  [DOCKER DESKTOP](https://www.docker.com/products/docker-desktop/)
